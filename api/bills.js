@@ -88,7 +88,7 @@ module.exports = handler({
                 if (ctx.sess.u !== bill.unit) fail(403, '자기 제안 단위의 의안만 철회할 수 있어요.');
             } else need(ctx, to === 'answered' ? 'admin' : 'officer');
 
-            const note = text(b.note, 500, '메모');
+            const note = text(b.note, 500, '메모') || (to === 'answered' ? '답변 등록' : '');
             const patch = { stage: to };
             if (to === 'returned' && !note) fail(400, '반려 이유를 적어 주세요.');
             if (to === 'decided') {

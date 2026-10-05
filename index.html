@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>학생자치 의안정보시스템</title>
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css">
+<style>
+/* 의안이 접수부터 이행까지 어떻게 처리되는지 기록·공개. 화면은 해시 주소(#/공간코드/...)로 나뉜다. 디자인은 홈페이지 DESIGN.md 규칙. */
+:root{
+  --bg:#f6f5f4; --panel:#ffffff; --panel-2:#fafaf9; --line:#e5e3df; --line-2:#c8c4be;
+  --ink:#1a1a1a; --muted:#5d5b54; --accent:#1e3a8a; --accent-ink:#fff; --bar:#c8c4be;
+  --warn:#b5541c;
+  --f-body:"Wanted Sans Variable","Wanted Sans","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1c1b19; --panel:#262522; --panel-2:#2c2b28; --line:#36342f; --line-2:#46433e;
+  --ink:#ebe9e4; --muted:#c4c1ba; --accent:#8fb0f5; --accent-ink:#1a1a1a; --bar:#5a5750;
+  --warn:#f0965f; color-scheme:dark;
+}}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{font-weight:600;font-size:17px;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+#nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1}
+#nav .sname{font-weight:600;color:var(--muted);margin-right:8px;font-size:14px;white-space:nowrap}
+#nav a{white-space:nowrap}
+@media (max-width:760px){#nav{order:3;flex:1 1 100%}}
+#nav a{padding:6px 10px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px}
+#nav a[aria-current="page"]{color:var(--accent);background:var(--panel-2);box-shadow:inset 0 -2px 0 var(--accent)}
+#who{display:flex;align-items:center;gap:8px;margin-left:auto}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card h2{margin:0 0 6px;font-size:16px;font-weight:600}
+.h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+.lead{color:var(--muted);font-size:16px;margin:6px 0 0}
+.narrow{max-width:640px;margin:0 auto}
+.stack{display:grid;gap:16px;align-content:start}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:16px;align-items:start;margin-top:16px}
+@media (max-width:860px){.cols2{grid-template-columns:1fr}}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.head{margin-bottom:14px}
+.grow{flex:1}
+.sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+.btn{display:inline-block;border:1px solid var(--line-2);background:var(--panel);border-radius:8px;padding:8px 14px;font-weight:500;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--warn)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn.lg{font-size:17px;padding:11px 22px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--panel-2)}
+.seg button{border:0;background:transparent;padding:7px 14px;font-weight:500;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:1px 7px;border-radius:4px;border:1px solid var(--line);background:var(--panel-2);color:var(--muted);white-space:nowrap}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--panel)}
+.mono{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.err{color:var(--warn);font-size:14px;margin:8px 0 0}
+.empty{color:var(--muted);text-align:center;padding:30px 10px}
+.note{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.note.done{border-color:var(--accent)}
+.note b{display:block;font-size:13px;color:var(--muted)}
+.note.done b{color:var(--accent)}
+.pre{white-space:pre-wrap;margin:0 0 14px}
+.back{display:inline-block;margin-bottom:10px;font-size:14px;text-decoration:none}
+ul.plain{list-style:none;margin:0;padding:0}
+ul.plain li{padding:6px 0;border-top:1px solid var(--line)}
+ul.plain li:first-child{border-top:0}
+/* 입력 */
+.form{display:grid;gap:14px}
+.f{display:grid;gap:4px;font-size:14px;font-weight:600}
+.f small{font-weight:400;color:var(--muted);font-size:13px}
+.f input,.f select,.f textarea,.filters input,.filters select{font-weight:400;padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);font-size:16px;width:100%}
+.f textarea{resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.gen{font-weight:400;font-size:14px;gap:6px 12px}
+.gen input{width:4.2em;padding:4px 6px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)}
+input.code{width:100%;text-align:center;font-size:30px;font-weight:600;letter-spacing:.2em;padding:12px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);text-transform:uppercase}
+.radios{display:flex;gap:6px 14px;flex-wrap:wrap;font-weight:400}
+/* 의안 목록 */
+.stages{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.stages button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 10px;font-size:13px}
+.stages button b{font-weight:600;margin-left:4px}
+.stages button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.filters{display:grid;grid-template-columns:auto minmax(0,1fr) repeat(3,minmax(0,150px));gap:8px;margin-bottom:12px;align-items:center}
+@media (max-width:860px){.filters{grid-template-columns:1fr 1fr}.filters .seg,.filters input{grid-column:1/-1}}
+.blist{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.bl-h,.bl-r{display:grid;grid-template-columns:7em minmax(0,1fr) 12em 6.5em 7em;gap:10px;padding:10px 14px;align-items:center}
+.bl-h{font-size:13px;font-weight:600;color:var(--muted);background:var(--panel-2);border-bottom:1px solid var(--line)}
+.bl-r{border-top:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:14px}
+.bl-h+.bl-r{border-top:0}
+.bl-r:hover{background:var(--panel-2)}
+.bl-r .t{font-weight:600;min-width:0}
+.bl-r .t small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+@media (max-width:760px){
+  .bl-h{display:none}
+  .bl-r{grid-template-columns:1fr auto;gap:2px 10px}
+  .bl-r .t{grid-column:1/-1;order:-1}
+  .bl-r>span:nth-child(3),.bl-r>span:nth-child(4){font-size:12px;color:var(--muted)}
+}
+.alert{border-color:var(--accent);margin-bottom:14px}
+.alert a{font-weight:600}
+/* 의안 상세 */
+.meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:14px 0 0;padding:0}
+.meta div{margin:0}
+.meta dt{font-size:12px;color:var(--muted);font-weight:600}
+.meta dd{margin:0;font-weight:500}
+.steps{list-style:none;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:0;margin:18px 0 0;counter-reset:s}
+.steps li{position:relative;text-align:center;font-size:13px;color:var(--muted);padding-top:22px;counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;top:0;left:50%;transform:translateX(-50%);width:20px;height:20px;line-height:18px;border-radius:50%;border:1px solid var(--line-2);background:var(--panel);font-size:11px;font-weight:600}
+.steps li::after{content:"";position:absolute;top:10px;left:calc(50% + 12px);right:calc(-50% + 12px);height:1px;background:var(--line-2)}
+.steps li:last-child::after{display:none}
+.steps li.done{color:var(--ink)}
+.steps li.done::before{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.steps li.now{color:var(--accent);font-weight:600}
+.steps li.now::before{border:2px solid var(--accent);color:var(--accent);line-height:16px}
+@media (max-width:560px){.steps li{font-size:11px}}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:13px;color:var(--muted);font-weight:600;border-top:0}
+.tbl td.big{font-size:20px;font-weight:600;letter-spacing:.12em}
+.counts{display:flex;gap:18px;flex-wrap:wrap;font-size:15px}
+.counts b{font-size:22px;font-weight:600;margin-left:4px}
+/* 회의록 */
+.item{border-top:1px solid var(--line);padding:12px 0}
+.item:first-of-type{border-top:0}
+.item-ed{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;position:relative}
+.x{border:0;background:transparent;color:var(--muted);font-size:18px;padding:2px 6px}
+.x:hover{color:var(--warn)}
+/* 표결: 투표 방식 실험실과 같은 고르기·결과 화면 */
+.cand{display:inline-flex;align-items:center;gap:5px;font-weight:600;white-space:nowrap}
+.order{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:14px}
+.order .gt{color:var(--muted)}
+.picker{display:grid;gap:10px}
+.picker .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.picker .opt{position:relative;border:2px solid var(--line);background:var(--panel);border-radius:8px;padding:12px 10px;text-align:left}
+.picker .opt[data-label]{border-color:var(--accent)}
+.picker .opt[data-label]::after{content:attr(data-label);position:absolute;top:6px;right:8px;font-size:12px;font-weight:600;color:var(--accent)}
+.picker.big .opts{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.picker.big .opt{padding:20px 14px;font-size:19px}
+.picker .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.mpick button{text-align:left;border:2px solid var(--line);border-radius:8px;background:var(--panel);padding:10px 12px}
+.mpick button[aria-pressed="true"]{border-color:var(--accent)}
+.mpick b{display:block;font-weight:600}
+.mpick span{display:block;font-size:13px;color:var(--muted);font-weight:400}
+.result{text-align:center;padding:28px 16px}
+.result .rlabel{margin:0;font-size:15px;color:var(--muted);font-weight:600}
+.result .winner{margin:6px 0 4px;font-size:clamp(44px,9vw,84px);font-weight:600;line-height:1.1;letter-spacing:-.02em;color:var(--accent);word-break:keep-all}
+.result .winner.none{color:var(--ink)}
+.result .wsub{margin:0 0 18px;font-size:18px;font-weight:600}
+.result .body{max-width:560px;margin:0 auto;text-align:left}
+.result .bar{font-size:15px}
+.result .bar .tr{height:14px}
+.result .rule{max-width:560px;margin:0 auto 14px;color:var(--muted);font-size:14px}
+.result details{max-width:560px;margin:22px auto 0;text-align:left;font-size:14px}
+.result details summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.result details ul{margin:8px 0 0;padding-left:20px}
+.bars{display:grid;gap:4px}
+.bar{display:grid;grid-template-columns:5.5em 1fr 2.6em;gap:6px;align-items:center;font-size:13px}
+.bar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .tr{height:10px;background:var(--panel-2);border-radius:5px;overflow:hidden}
+.bar .fl{display:block;height:100%;background:var(--bar);border-radius:5px}
+.bar.top .fl{background:var(--accent)}
+.bar.top .nm,.bar.top .v{color:var(--accent);font-weight:600}
+.bar .v{font-weight:600;text-align:right}
+.lbl{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+table.pw{border-collapse:collapse;font-size:13px;width:100%}
+table.pw th,table.pw td{border:1px solid var(--line);padding:4px 6px;text-align:center}
+table.pw td.w{color:var(--accent);font-weight:600}
+table.pw td.self{background:var(--panel-2)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:20px;width:min(420px,calc(100% - 32px))}
+dialog::backdrop{background:rgba(26,26,26,.4)}
+footer{border-top:1px solid var(--line);padding:20px 16px 32px;text-align:center;font-size:13px;color:var(--muted)}
+footer p{margin:2px 0}
+footer a{color:inherit}
+@media print{
+  .top,footer,.noprint{display:none!important}
+  body{background:#fff;color:#000}
+  .card{border:0;padding:0}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">학생자치 의안정보시스템</a>
+  <nav id="nav" aria-label="메뉴" hidden></nav>
+  <div id="who"></div>
+</header>
+<main id="app"></main>
+<footer>
+  <p>&copy; 2026 <a href="https://hyunedulab.com/">현쌤의 에듀랩</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ko" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a></p>
+  <p><a href="https://hyunedulab.com/privacy/" target="_blank" rel="noopener">개인정보처리방침</a> · <a href="https://hyunedulab.com/terms/" target="_blank" rel="noopener">이용약관</a></p>
+  <p>학생 이름이나 연락처는 모으지 않아요. 의안에는 제안 단위와 직책만 남아요.</p>
+</footer>
+
+<dialog id="keyDlg">
+  <form id="keyForm" class="form">
+    <h2 style="margin:0">권한 코드 넣기</h2>
+    <p class="sub" style="margin:0">제안 코드(학급·모둠 대표), 임원 코드, 관리 코드(선생님) 중 받은 코드를 넣어 주세요.</p>
+    <input class="code" id="keyInput" maxlength="6" autocomplete="off" aria-label="권한 코드">
+    <p class="err" id="keyErr"></p>
+    <div class="row">
+      <button type="button" class="btn small" id="keyView">열람으로 돌아가기</button>
+      <span class="grow"></span>
+      <button type="button" class="btn" id="keyCancel">닫기</button>
+      <button class="btn primary">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d } catch (e) { return d } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) {} };
+const app = $('#app');
+
+/* ── 서버와 이야기하기 ── */
+const TOKENS = load('bills-tokens', {});   // 공간 코드 → 입장권
+const RECENT = load('bills-recent', {});   // 공간 코드 → 이름
+const CUR = { code: null, space: null, me: null, codes: null };
+let notice = '', justCreated = false;
+
+async function call(path, params, body, token) {
+  const url = '/api/' + path + (params ? '?' + new URLSearchParams(params) : '');
+  const headers = { 'x-token': token || '' };
+  const opt = body ? { method: 'POST', headers: Object.assign(headers, { 'Content-Type': 'application/json' }), body: JSON.stringify(body) } : { headers };
+  const r = await fetch(url, opt);
+  const d = await r.json().catch(() => ({ error: '서버에 연결하지 못했어요.' }));
+  if (!r.ok) { const e = new Error(d.error || '오류가 났어요.'); e.status = r.status; throw e }
+  return d;
+}
+// 입장권이 막혔으면(코드가 바뀜) 열람으로 다시 들어와 한 번 더 시도
+async function req(path, params, body) {
+  try { return await call(path, params, body, TOKENS[CUR.code]) }
+  catch (e) {
+    if (e.status !== 401 || !CUR.code) throw e;
+    await enter(CUR.code);
+    notice = '코드가 바뀌어 열람 권한으로 다시 들어왔어요. 권한이 필요하면 새 코드를 넣어 주세요.';
+    chrome(activeTab);
+    return call(path, params, body, TOKENS[CUR.code]);
+  }
+}
+function setSession(d) {
+  Object.assign(CUR, { code: d.space.code, space: d.space, me: d.me, codes: d.codes || null });
+  TOKENS[d.space.code] = d.token; RECENT[d.space.code] = d.space.name;
+  save('bills-tokens', TOKENS); save('bills-recent', RECENT);
+}
+async function enter(code, key) { setSession(await call('space', null, { action: 'login', code, key })) }
+async function ensureSpace(code) {
+  if (CUR.code === code && CUR.space) return;
+  Object.assign(CUR, { code, space: null });
+  if (TOKENS[code]) {
+    try { const d = await call('space', null, null, TOKENS[code]); Object.assign(CUR, { space: d.space, me: d.me, codes: d.codes || null }); return }
+    catch (e) { if (e.status !== 401) throw e }
+  }
+  await enter(code);
+}
+
+let timer = null;
+const stopPoll = () => { clearInterval(timer); timer = null };
+const startPoll = fn => { stopPoll(); fn(); timer = setInterval(() => { if (!document.hidden) fn() }, 3000) };
+
+/* ── 낱말과 모양 ── */
+const CATEGORIES = ['시설·환경', '행사', '규칙·생활', '급식', '학습', '기타'];
+const STEPS = ['received', 'review', 'tabled', 'decided', 'proposed', 'answered', 'done'];
+const NEXT = {
+  received: ['review', 'tabled', 'returned', 'withdrawn'], review: ['tabled', 'returned', 'withdrawn'],
+  tabled: ['decided'], decided: ['proposed'], proposed: ['answered'], answered: ['done']
+};
+const RESULT = { passed: '가결', amended: '수정 가결', rejected: '부결' };
+const ROLE = { view: '열람', unit: '제안 단위', officer: '임원', admin: '선생님' };
+const school = () => CUR.space.kind === 'class' ? '선생님' : '학교';
+const stepName = s => ({ received: '접수', review: '심사', tabled: '상정', decided: '의결', proposed: school() + ' 건의', answered: school() + ' 답변', done: '이행 완료', withdrawn: '철회', returned: '반려' })[s];
+const stageKey = b => b.stage === 'decided' && b.result === 'rejected' ? 'rejected' : b.stage;
+const KEYS = ['received', 'review', 'tabled', 'decided', 'rejected', 'proposed', 'answered', 'done', 'withdrawn', 'returned'];
+const keyName = k => k === 'rejected' ? '부결' : k === 'decided' ? '가결' : stepName(k);
+const isClosed = b => ['done', 'withdrawn', 'returned', 'rejected'].includes(stageKey(b));
+const billLabel = b => b.stage === 'decided' ? RESULT[b.result] || '의결' : stepName(b.stage);
+const chip = b => `<span class="chip${isClosed(b) ? '' : ' on'}">${esc(billLabel(b))}</span>`;
+const billNo = b => `${b.year}-${String(b.seq).padStart(3, '0')}`;
+const day = iso => iso ? new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '.') : '';
+const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+const lines = s => s.split('\n').map(x => x.trim()).filter(Boolean);
+const C = path => '#/' + CUR.code + (path || '');
+const field = (label, input, hint) => `<label class="f">${label}${input}${hint ? `<small>${hint}</small>` : ''}</label>`;
+const card = (title, body) => `<div class="card narrow"><h2>${title}</h2><p class="sub" style="margin:0">${body}</p></div>`;
+
+/* ── 머리글: 공간 이름, 메뉴, 지금 권한 ── */
+let activeTab = null;
+function chrome(active) {
+  activeTab = active;
+  const nav = $('#nav'), who = $('#who');
+  if (!active || !CUR.space) { nav.hidden = true; who.innerHTML = ''; return }
+  const tabs = [['bills', '의안', C()], ['m', '회의록', C('/m')], ['v', '표결', C('/v')]];
+  if (CUR.me.role === 'admin') tabs.push(['settings', '설정', C('/settings')]);
+  nav.hidden = false;
+  nav.innerHTML = `<span class="sname">${esc(CUR.space.name)}</span>` +
+    tabs.map(([k, l, h]) => `<a href="${h}" ${active === k ? 'aria-current="page"' : ''}>${l}</a>`).join('');
+  const me = CUR.me;
+  who.innerHTML = `<span class="chip on">${esc(me.role === 'unit' ? me.unit + ' 대표' : ROLE[me.role])}</span><button class="btn small" id="keyBtn">권한 코드</button>`;
+  $('#keyBtn').onclick = () => { $('#keyErr').textContent = ''; $('#keyInput').value = ''; $('#keyDlg').showModal() };
+}
+$('#keyForm').onsubmit = async e => {
+  e.preventDefault();
+  try { await enter(CUR.code, $('#keyInput').value); $('#keyDlg').close(); route() }
+  catch (err) { $('#keyErr').textContent = err.message }
+};
+$('#keyCancel').onclick = () => $('#keyDlg').close();
+$('#keyView').onclick = async () => { await enter(CUR.code); $('#keyDlg').close(); route() };
+
+/* ── 화면 고르기 ── */
+async function route() {
+  stopPoll();
+  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  try {
+    if (!parts.length) return home();
+    if (parts[0] === 'new') return createPage();
+    await ensureSpace(parts[0].toUpperCase());
+    const [p, id, sub] = parts.slice(1);
+    chrome({ b: 'bills', propose: 'bills', m: 'm', v: 'v', settings: 'settings' }[p] || 'bills');
+    if (!p) await listPage();
+    else if (p === 'propose') billForm();
+    else if (p === 'b') await billPage(id);
+    else if (p === 'm') await (id === 'new' ? meetingEdit() : sub === 'edit' ? meetingEdit(id) : id ? meetingPage(id) : meetingsPage());
+    else if (p === 'v') await (id ? votePage(id) : votesPage());
+    else if (p === 'settings') await settingsPage();
+    else location.hash = C();
+    if (notice) { app.insertAdjacentHTML('afterbegin', `<div class="note">${esc(notice)}</div>`); notice = '' }
+  } catch (e) {
+    app.innerHTML = `<div class="card narrow"><h2>불러오지 못했어요</h2><p class="err">${esc(e.message)}</p><p><a href="#/">처음 화면으로</a></p></div>`;
+  }
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+/* ── 처음 화면 ── */
+function home() {
+  chrome(null);
+  const recent = Object.entries(RECENT);
+  app.innerHTML = `<div class="narrow stack">
+    <div><h1 class="h1">학생자치 의안정보시스템</h1>
+      <p class="lead">학급회의와 학생회에 낸 건의가 심의와 의결을 거쳐 학교의 답변과 이행까지 어떻게 처리되는지 한곳에 기록하고 함께 확인해요.</p></div>
+    <form class="card" id="enterForm">
+      <h2>공간 들어가기</h2>
+      <p class="sub">선생님이나 학생회에서 알려 준 공간 코드(영문·숫자 8자리)를 넣어 주세요.</p>
+      <input class="code" id="enterCode" maxlength="8" autocomplete="off" aria-label="공간 코드">
+      <div class="row" style="margin-top:12px"><button class="btn primary lg">들어가기</button></div>
+      <p class="err" id="enterErr"></p>
+    </form>
+    ${recent.length ? `<div class="card"><h2>최근 들어간 공간</h2><ul class="plain">${recent.map(([c, n]) =>
+      `<li><a href="#/${esc(c)}">${esc(n)}</a> <span class="sub mono">${esc(c)}</span></li>`).join('')}</ul></div>` : ''}
+    <div class="card"><h2>처음 쓰시는 선생님</h2>
+      <p class="sub">학교 학생회나 우리 반 학급회의 공간을 만들고, 학생들에게 나눠 줄 코드를 받아요.</p>
+      <a class="btn" href="#/new">새 공간 만들기</a></div>
+  </div>`;
+  $('#enterForm').onsubmit = async e => {
+    e.preventDefault();
+    const code = $('#enterCode').value.trim().toUpperCase();
+    try { await enter(code); location.hash = '#/' + code }
+    catch (err) { $('#enterErr').textContent = err.message }
+  };
+}
+
+/* ── 공간 만들기·설정 ── */
+const DEFAULTS = {
+  council: { body: '대의원회', roles: '회장, 부회장, 대의원, 서기', name: '예: 행복초등학교 학생회' },
+  class: { body: '학급회의', roles: '모둠장, 부장, 학급 회장, 학급 부회장, 구성원', name: '예: 5학년 2반' }
+};
+function spaceFields(s) {
+  return field('공간 이름', `<input name="name" maxlength="40" required value="${esc(s.name || '')}">`) +
+    field('심의 기구 이름', `<input name="body_name" maxlength="20" value="${esc(s.body_name || '')}">`, '회의록 이름에 쓰여요. 예: 대의원회, 학급회의') +
+    `<div class="f">제안 단위<div class="row gen" id="gen"></div>
+      <textarea name="units" rows="6" required>${esc((s.units || []).join('\n'))}</textarea>
+      <small>한 줄에 하나씩. 학생회는 학급, 학급회의는 모둠이나 부서를 써요. 단위마다 제안 코드가 따로 생겨요.</small></div>` +
+    field('직책', `<input name="roles" maxlength="200" value="${esc((s.roles || []).join(', '))}">`, '쉼표로 나눠요. 의안을 낼 때 이 중에서 골라요.') +
+    `<div class="grid2">
+      ${field('재적 수', `<input name="enrolled" type="number" min="0" max="9999" inputmode="numeric" value="${s.enrolled || ''}">`, '표결에 참여할 수 있는 사람 수. 출석이 재적 과반인지 보여 줘요. 비워도 돼요.')}
+      ${field('가결 기준', `<select name="pass_rule"><option value="majority">출석 과반 찬성</option><option value="two_thirds" ${s.pass_rule === 'two_thirds' ? 'selected' : ''}>출석 3분의 2 찬성</option></select>`)}
+    </div>`;
+}
+const spaceBody = f => ({
+  name: f.name.value, body_name: f.body_name.value, units: lines(f.units.value),
+  roles: f.roles.value.split(',').map(x => x.trim()).filter(Boolean), enrolled: f.enrolled.value, pass_rule: f.pass_rule.value
+});
+
+function createPage() {
+  chrome(null);
+  app.innerHTML = `<form class="card narrow form" id="cf">
+    <div><h1 class="h1">새 공간 만들기</h1><p class="sub" style="margin:6px 0 0">학생 이름이나 연락처는 받지 않아요. 만들고 나면 나눠 줄 코드표가 나와요.</p></div>
+    <div class="f">어디에서 쓰나요?<div class="seg" id="kind"><button type="button" data-k="council" aria-pressed="true">학교 학생회</button><button type="button" data-k="class" aria-pressed="false">우리 반 학급회의</button></div></div>
+    ${spaceFields({})}
+    <div class="row"><button class="btn primary lg">공간 만들기</button></div>
+    <p class="err" id="cfErr"></p>
+  </form>`;
+  const f = $('#cf');
+  let kind = 'council';
+  const fill = () => {
+    const D = DEFAULTS[kind];
+    f.body_name.value = D.body; f.roles.value = D.roles; f.name.placeholder = D.name;
+    $('#gen').innerHTML = kind === 'council'
+      ? `<label><input type="number" id="g1" min="1" max="6" value="1">학년부터</label><label><input type="number" id="g2" min="1" max="6" value="6">학년까지</label><label>학년마다 <input type="number" id="cn" min="1" max="13" value="3">반</label><button type="button" class="btn small" id="genBtn">채우기</button>`
+      : `<label><input type="number" id="cn" min="1" max="20" value="6">모둠</label><button type="button" class="btn small" id="genBtn">채우기</button>`;
+    $('#genBtn').onclick = () => {
+      const n = +$('#cn').value || 1, out = [];
+      if (kind === 'council') { for (let g = +$('#g1').value || 1; g <= (+$('#g2').value || 1); g++) for (let c = 1; c <= n; c++) out.push(`${g}학년 ${c}반`) }
+      else for (let i = 1; i <= n; i++) out.push(`${i}모둠`);
+      f.units.value = out.join('\n');
+    };
+    $('#genBtn').click();
+  };
+  $('#kind').onclick = e => {
+    const b = e.target.closest('[data-k]'); if (!b) return;
+    kind = b.dataset.k;
+    $('#kind').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    fill();
+  };
+  fill();
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const btn = f.querySelector('.primary'); btn.disabled = true; $('#cfErr').textContent = '';
+    try {
+      const d = await call('space', null, Object.assign({ action: 'create', kind }, spaceBody(f)));
+      setSession(d); justCreated = true;
+      location.hash = '#/' + d.space.code + '/settings';
+    } catch (err) { $('#cfErr').textContent = err.message; btn.disabled = false }
+  };
+}
+
+async function settingsPage() {
+  if (CUR.me.role !== 'admin') { app.innerHTML = card('설정은 선생님만 볼 수 있어요', '관리 코드로 들어와 주세요.'); return }
+  const d = await req('space');
+  Object.assign(CUR, { space: d.space, codes: d.codes });
+  const K = d.codes, S = d.space;
+  const link = location.origin + location.pathname + '#/' + K.code;
+  const rows = [
+    ['space', '공간 코드', '모든 학생·선생님 (보기)', K.code],
+    ['admin', '관리 코드', '선생님 (설정, ' + school() + ' 답변)', K.admin_code],
+    ['officer', '임원 코드', '의장단·임원 (단계 바꾸기, 회의록, 표결 진행)', K.officer_code],
+    ...K.units.map(u => ['unit:' + u.name, u.name + ' 제안 코드', u.name + ' 대표 (의안 접수, 표결 참여)', u.code])
+  ];
+  app.innerHTML = `
+    ${justCreated ? `<div class="note done noprint"><b>공간을 만들었어요</b>아래 코드표를 인쇄해 나눠 주세요. 코드는 이 화면에서 언제든 다시 볼 수 있어요.</div>` : ''}
+    <section class="card">
+      <div class="row"><h1 class="h1 grow">${esc(S.name)} 코드표</h1><button class="btn noprint" id="printBtn">인쇄</button></div>
+      <p class="sub" style="margin-top:6px">주소: <span class="mono">${esc(link)}</span> · 공간 코드를 넣으면 누구나 의안을 볼 수 있고, 권한 코드를 더 넣으면 그 일을 할 수 있어요.</p>
+      <table class="tbl"><thead><tr><th>구분</th><th>누가 쓰나요</th><th>코드</th><th class="noprint"></th></tr></thead><tbody>
+      ${rows.map(([k, a, b, c]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td><td class="big mono">${esc(c)}</td>
+        <td class="noprint"><button class="btn small" data-regen="${esc(k)}">새로 만들기</button></td></tr>`).join('')}
+      </tbody></table>
+      <p class="sub noprint" style="margin:10px 0 0">코드가 퍼졌을 때 새로 만드세요. 예전 코드로 들어온 기기는 새 코드를 넣어야 해요.</p>
+    </section>
+    <form class="card form noprint" id="sf" style="margin-top:16px"><h2>설정</h2>${spaceFields(S)}
+      <div class="row"><button class="btn primary">설정 저장</button><span class="sub" id="sfMsg" style="margin:0"></span></div><p class="err" id="sfErr"></p></form>
+    <form class="card form noprint" id="df" style="margin-top:16px"><h2>공간 지우기</h2>
+      <p class="sub" style="margin:0">의안, 회의록, 표결이 모두 지워지고 되돌릴 수 없어요. 확인을 위해 공간 이름을 똑같이 써 주세요.</p>
+      <input name="confirm" class="f" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);font-size:16px" aria-label="공간 이름 확인">
+      <div class="row"><button class="btn danger">공간 지우기</button></div><p class="err" id="dfErr"></p></form>`;
+  justCreated = false;
+  $('#gen').hidden = true;
+  $('#printBtn').onclick = () => window.print();
+  app.querySelectorAll('[data-regen]').forEach(b => b.onclick = async () => {
+    const k = b.dataset.regen;
+    if (!confirm('이 코드를 새로 만들까요? 예전 코드는 더 이상 쓸 수 없어요.')) return;
+    const r = await req('space', null, Object.assign({ action: 'regen' }, k.startsWith('unit:') ? { which: 'unit', unit: k.slice(5) } : { which: k }));
+    if (r.space.code !== CUR.code) { delete TOKENS[CUR.code]; delete RECENT[CUR.code] }
+    setSession(Object.assign(r, { me: CUR.me }));
+    location.hash === '#/' + r.space.code + '/settings' ? route() : location.hash = '#/' + r.space.code + '/settings';
+  });
+  $('#sf').onsubmit = async e => {
+    e.preventDefault(); $('#sfErr').textContent = '';
+    try {
+      const r = await req('space', null, Object.assign({ action: 'settings' }, spaceBody(e.target)));
+      Object.assign(CUR, { space: r.space, codes: r.codes }); RECENT[CUR.code] = r.space.name; save('bills-recent', RECENT);
+      await route(); $('#sfMsg').textContent = '저장했어요.';
+    } catch (err) { $('#sfErr').textContent = err.message }
+  };
+  $('#df').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      await req('space', null, { action: 'remove', confirm: e.target.confirm.value });
+      delete TOKENS[CUR.code]; delete RECENT[CUR.code]; save('bills-tokens', TOKENS); save('bills-recent', RECENT);
+      Object.assign(CUR, { code: null, space: null }); location.hash = '#/';
+    } catch (err) { $('#dfErr').textContent = err.message }
+  };
+}
+
+/* ── 의안 목록 ── */
+const F = { tab: 'pending', q: '', cat: '', unit: '', year: '', stage: '' };
+async function listPage() {
+  const d = await req('bills');
+  const bills = d.bills, me = CUR.me;
+  const years = [...new Set(bills.map(b => b.year))].sort((a, b) => b - a);
+  const opt = (v, label, cur) => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(label)}</option>`;
+  app.innerHTML = `
+    ${d.openVotes.length && me.role !== 'view' ? `<div class="card alert"><b>진행 중인 표결</b> ${d.openVotes.map(v => `<a href="${C('/v/' + v.id)}">${esc(v.title)}</a>`).join(' · ')}</div>` : ''}
+    <div class="row head"><h1 class="h1 grow">의안 목록</h1>${me.role === 'unit' ? `<a class="btn primary" href="${C('/propose')}">의안 접수</a>` : ''}</div>
+    <div class="stages" id="stages"></div>
+    <div class="filters">
+      <div class="seg" id="tabs">${[['pending', '계류 의안'], ['closed', '처리 의안'], ['all', '전체']].map(([k, l]) => `<button data-tab="${k}">${l}</button>`).join('')}</div>
+      <input type="search" id="fq" placeholder="제목·내용 검색" value="${esc(F.q)}" aria-label="검색">
+      <select id="fcat" aria-label="분류">${opt('', '모든 분류', F.cat)}${CATEGORIES.map(c => opt(c, c, F.cat)).join('')}</select>
+      <select id="funit" aria-label="제안 단위">${opt('', '모든 제안 단위', F.unit)}${CUR.space.units.map(u => opt(u, u, F.unit)).join('')}</select>
+      <select id="fyear" aria-label="학년도">${opt('', '모든 학년도', F.year)}${years.map(y => opt(y, y + '학년도', F.year)).join('')}</select>
+    </div>
+    <div id="rows"></div>`;
+  const draw = () => {
+    const q = F.q.trim().toLowerCase();
+    const base = bills.filter(b => (!F.cat || b.category === F.cat) && (!F.unit || b.unit === F.unit) &&
+      (!F.year || String(b.year) === String(F.year)) && (!q || (b.title + ' ' + b.reason + ' ' + b.content).toLowerCase().includes(q)));
+    const counts = {};
+    base.forEach(b => { const k = stageKey(b); counts[k] = (counts[k] || 0) + 1 });
+    $('#stages').innerHTML = `<button data-stage="" aria-pressed="${!F.stage}">전체<b>${base.length}</b></button>` +
+      KEYS.filter(k => counts[k]).map(k => `<button data-stage="${k}" aria-pressed="${F.stage === k}">${esc(keyName(k))}<b>${counts[k]}</b></button>`).join('');
+    $('#tabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', !F.stage && b.dataset.tab === F.tab));
+    const shown = base.filter(b => F.stage ? stageKey(b) === F.stage : F.tab === 'all' || (F.tab === 'closed') === isClosed(b));
+    $('#rows').innerHTML = shown.length
+      ? `<div class="blist" role="table"><div class="bl-h" role="row"><span>의안번호</span><span>제목</span><span>제안</span><span>제안일</span><span>상태</span></div>
+        ${shown.map(b => `<a class="bl-r" role="row" href="${C('/b/' + b.id)}"><span class="mono">${billNo(b)}</span>
+          <span class="t">${esc(b.title)}<small>${esc(b.category)}</small></span><span>${esc(b.unit)} · ${esc(b.role)}</span><span>${day(b.created_at)}</span><span>${chip(b)}</span></a>`).join('')}</div>`
+      : `<div class="card empty">${bills.length ? '조건에 맞는 의안이 없어요.' : '아직 접수된 의안이 없어요.' + (me.role === 'unit' ? ' 위의 \'의안 접수\'로 첫 의안을 내 보세요.' : '')}</div>`;
+  };
+  $('#stages').onclick = e => { const b = e.target.closest('[data-stage]'); if (b) { F.stage = b.dataset.stage; draw() } };
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { F.tab = b.dataset.tab; F.stage = ''; draw() } };
+  $('#fq').oninput = e => { F.q = e.target.value; draw() };
+  [['#fcat', 'cat'], ['#funit', 'unit'], ['#fyear', 'year']].forEach(([s, k]) => $(s).onchange = e => { F[k] = e.target.value; draw() });
+  draw();
+}
+
+/* ── 의안 접수 ── */
+function billForm() {
+  const me = CUR.me;
+  if (me.role !== 'unit') { app.innerHTML = card('의안은 제안 코드로 낼 수 있어요', '위의 \'권한 코드\'에 학급(모둠) 제안 코드를 넣어 주세요.'); return }
+  app.innerHTML = `<a class="back" href="${C()}">← 의안 목록</a>
+  <form class="card narrow form" id="bf">
+    <div><h1 class="h1">의안 접수</h1><p class="sub" style="margin:6px 0 0">이름은 쓰지 마세요. 의안에는 <b>${esc(me.unit)}</b>과 고른 직책만 남아요.</p></div>
+    <div class="grid2">
+      ${field('직책', `<select name="role" required>${CUR.space.roles.map(r => `<option>${esc(r)}</option>`).join('')}</select>`)}
+      ${field('분류', `<select name="category">${CATEGORIES.map(c => `<option>${esc(c)}</option>`).join('')}</select>`)}
+    </div>
+    ${field('제목', '<input name="title" maxlength="80" required>', '무엇을 바라는지 한 줄로. 예: 2층 복도에 정수기를 설치해 주세요')}
+    ${field('제안 이유', '<textarea name="reason" rows="4" maxlength="1000" required></textarea>', '왜 필요한지, 지금 어떤 점이 불편한지')}
+    ${field('주요 내용', '<textarea name="content" rows="6" maxlength="2000" required></textarea>', '구체적으로 무엇을, 어디에, 어떻게 했으면 하는지')}
+    <div class="row"><button class="btn primary lg">접수하기</button></div><p class="err" id="bfErr"></p>
+  </form>`;
+  $('#bf').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target, btn = f.querySelector('.primary'); btn.disabled = true;
+    try {
+      const d = await req('bills', null, { action: 'create', role: f.role.value, category: f.category.value, title: f.title.value, reason: f.reason.value, content: f.content.value });
+      location.hash = C('/b/' + d.bill.id);
+    } catch (err) { $('#bfErr').textContent = err.message; btn.disabled = false }
+  };
+}
+
+/* ── 의안 상세 ── */
+function allowedNext(b, me) {
+  return (NEXT[b.stage] || []).filter(to => {
+    if (to === 'proposed' && b.result === 'rejected') return false;
+    if (to === 'withdrawn') return me.role === 'officer' || me.role === 'admin' || (me.role === 'unit' && me.unit === b.unit);
+    if (to === 'answered') return me.role === 'admin';
+    return me.role === 'officer' || me.role === 'admin';
+  });
+}
+async function billPage(id) {
+  const d = await req('bills', { id });
+  const b = d.bill, me = CUR.me;
+  const cur = STEPS.indexOf(b.stage);
+  const ended = { withdrawn: '이 의안은 철회되었어요.', returned: '이 의안은 반려되었어요.' }[b.stage] || (b.result === 'rejected' ? '이 의안은 부결되었어요.' : '');
+  const next = allowedNext(b, me);
+  const canVote = (me.role === 'officer' || me.role === 'admin') && ['received', 'review', 'tabled'].includes(b.stage);
+  const hasCounts = b.yes_count != null || b.no_count != null;
+  app.innerHTML = `<a class="back" href="${C()}">← 의안 목록</a>
+    <section class="card">
+      <p class="sub mono" style="margin:0">의안번호 ${billNo(b)}</p>
+      <h1 class="h1">${esc(b.title)}</h1>
+      <dl class="meta">
+        <div><dt>제안</dt><dd>${esc(b.unit)} · ${esc(b.role)}</dd></div>
+        <div><dt>제안일</dt><dd>${day(b.created_at)}</dd></div>
+        <div><dt>분류</dt><dd>${esc(b.category)}</dd></div>
+        <div><dt>상태</dt><dd>${chip(b)}</dd></div>
+      </dl>
+      <ol class="steps" aria-label="진행 단계">${STEPS.map((s, i) => `<li class="${i < cur || b.stage === 'done' ? 'done' : i === cur ? 'now' : ''}">${esc(stepName(s))}</li>`).join('')}</ol>
+      ${ended ? `<p class="note" style="margin:14px 0 0">${ended}</p>` : ''}
+    </section>
+    <div class="cols2">
+      <div class="stack">
+        <section class="card"><h2>제안 이유</h2><p class="pre">${esc(b.reason)}</p><h2>주요 내용</h2><p class="pre" style="margin:0">${esc(b.content)}</p></section>
+        ${b.result ? `<section class="card"><h2>의결 결과: ${esc(RESULT[b.result])}</h2>${hasCounts ? `<div class="counts"><span>찬성<b>${b.yes_count ?? '-'}</b></span><span>반대<b>${b.no_count ?? '-'}</b></span><span>기권<b>${b.abstain_count ?? '-'}</b></span></div>` : ''}</section>` : ''}
+        ${b.reply ? `<section class="card"><h2>${school()} 답변</h2><p class="pre" style="margin:0">${esc(b.reply)}</p></section>` : ''}
+        <section class="card"><h2>처리 경과</h2>
+          <table class="tbl"><thead><tr><th>날짜</th><th>단계</th><th>내용</th><th>처리</th></tr></thead><tbody>
+          ${d.events.map(ev => `<tr><td>${day(ev.at)}</td><td>${esc(stepName(ev.stage))}</td><td>${esc(ev.note)}</td><td>${esc(ROLE[ev.by_role] || '')}</td></tr>`).join('')}
+          </tbody></table></section>
+      </div>
+      <div class="stack">
+        ${next.length ? `<form class="card form" id="af"><h2>처리하기</h2>
+          ${field('다음 단계', `<select name="to">${next.map(t => `<option value="${t}">${esc(stepName(t))}</option>`).join('')}</select>`)}
+          <div id="extra" class="form"></div>
+          ${field('메모', '<input name="note" maxlength="500">', '처리 경과에 남아요')}
+          <div class="row"><button class="btn primary">기록하기</button></div><p class="err" id="afErr"></p></form>` : ''}
+        ${canVote ? `<div class="card"><h2>찬반 표결</h2><p class="sub">${esc(CUR.space.body_name)}에서 이 의안을 표결해요. 결과는 의안의 의결 결과로 옮길 수 있어요.</p>
+          <button class="btn primary" id="voteBtn">표결 시작</button><p class="err" id="voteErr"></p></div>` : ''}
+        <div class="card"><h2>관련 회의록</h2>${d.meetings.length ? `<ul class="plain">${d.meetings.map(m => `<li><a href="${C('/m/' + m.id)}">${esc(m.title)}</a> <span class="sub">${esc(m.held_on.replace(/-/g, '.'))}</span></li>`).join('')}</ul>` : '<p class="sub" style="margin:0">아직 없어요.</p>'}</div>
+        <div class="card"><h2>표결</h2>${d.votes.length ? `<ul class="plain">${d.votes.map(v => `<li><a href="${C('/v/' + v.id)}">${esc(v.title)}</a> <span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : '마감'}</span></li>`).join('')}</ul>` : '<p class="sub" style="margin:0">아직 없어요.</p>'}</div>
+      </div>
+    </div>`;
+  if (next.length) {
+    const f = $('#af');
+    const extra = () => {
+      const to = f.to.value;
+      $('#extra').innerHTML = to === 'decided'
+        ? `<div class="f">의결 결과<div class="radios">${Object.entries(RESULT).map(([k, l], i) => `<label><input type="radio" name="result" value="${k}" ${i ? '' : 'checked'}> ${l}</label>`).join('')}</div></div>
+           <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${field('찬성', '<input name="yes" type="number" min="0" inputmode="numeric">')}${field('반대', '<input name="no" type="number" min="0" inputmode="numeric">')}${field('기권', '<input name="abstain" type="number" min="0" inputmode="numeric">')}</div>`
+        : to === 'answered' ? field(school() + ' 답변', '<textarea name="reply" rows="5" maxlength="1000" required></textarea>')
+        : to === 'returned' ? '<p class="sub" style="margin:0">반려 이유를 메모에 꼭 적어 주세요. (예: 같은 내용의 의안이 이미 있어요)</p>' : '';
+    };
+    f.to.onchange = extra; extra();
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const body = { action: 'advance', id: b.id, to: f.to.value, note: f.note.value };
+      if (body.to === 'decided') Object.assign(body, { result: f.result.value, yes: f.yes.value, no: f.no.value, abstain: f.abstain.value });
+      if (body.to === 'answered') body.reply = f.reply.value;
+      if (body.to === 'withdrawn' && !confirm('이 의안을 철회할까요? 되돌릴 수 없어요.')) return;
+      try { await req('bills', null, body); route() } catch (err) { $('#afErr').textContent = err.message }
+    };
+  }
+  if (canVote) $('#voteBtn').onclick = async () => {
+    try { const r = await req('votes', null, { action: 'start', kind: 'yesno', bill_id: b.id }); location.hash = C('/v/' + r.vote.id) }
+    catch (err) { $('#voteErr').textContent = err.message }
+  };
+}
+
+/* ── 회의록 ── */
+async function meetingsPage() {
+  const d = await req('meetings');
+  const officer = CUR.me.role === 'officer' || CUR.me.role === 'admin';
+  app.innerHTML = `<div class="row head"><h1 class="h1 grow">회의록</h1>${officer ? `<a class="btn primary" href="${C('/m/new')}">회의록 쓰기</a>` : ''}</div>
+    ${d.meetings.length ? `<div class="blist">${d.meetings.map(m => `<a class="bl-r" style="grid-template-columns:minmax(0,1fr) auto auto" href="${C('/m/' + m.id)}">
+      <span class="t">${esc(m.title)}<small>의안 ${m.items.length}건${m.enrolled ? ` · 재적 ${m.enrolled}명 중 ${m.present}명 출석` : ''}</small></span><span></span><span>${esc(m.held_on.replace(/-/g, '.'))}</span></a>`).join('')}</div>`
+      : `<div class="card empty">아직 회의록이 없어요.</div>`}`;
+}
+async function meetingPage(id) {
+  const [{ meeting: m }, { bills }] = await Promise.all([req('meetings', { id }), req('bills')]);
+  const byId = Object.fromEntries(bills.map(b => [b.id, b]));
+  const officer = CUR.me.role === 'officer' || CUR.me.role === 'admin';
+  app.innerHTML = `<a class="back" href="${C('/m')}">← 회의록</a>
+    <section class="card">
+      <div class="row"><h1 class="h1 grow">${esc(m.title)}</h1>${officer ? `<a class="btn small" href="${C('/m/' + m.id + '/edit')}">고치기</a><button class="btn small danger" id="mDel">지우기</button>` : ''}</div>
+      <dl class="meta"><div><dt>날짜</dt><dd>${esc(m.held_on.replace(/-/g, '.'))}</dd></div>
+        <div><dt>출석</dt><dd>${m.enrolled ? `재적 ${m.enrolled}명 중 ${m.present}명` : m.present ? m.present + '명' : '-'}</dd></div></dl>
+    </section>
+    <section class="card" style="margin-top:16px"><h2>안건</h2>
+      ${m.items.length ? m.items.map((it, i) => { const b = byId[it.bill_id]; return `<div class="item">
+        <p style="margin:0 0 4px"><b>${i + 1}.</b> ${b ? `<a href="${C('/b/' + b.id)}">${billNo(b)} ${esc(b.title)}</a> ${chip(b)}` : '(지워진 의안)'}</p>
+        ${it.summary ? `<p class="pre" style="margin:0 0 4px">${esc(it.summary)}</p>` : ''}${it.result ? `<p class="sub" style="margin:0">결과: ${esc(it.result)}</p>` : ''}</div>` }).join('') : '<p class="sub" style="margin:0">올린 의안이 없어요.</p>'}
+    </section>
+    ${m.notes ? `<section class="card" style="margin-top:16px"><h2>기타 기록</h2><p class="pre" style="margin:0">${esc(m.notes)}</p></section>` : ''}`;
+  if (officer) $('#mDel').onclick = async () => {
+    if (!confirm('이 회의록을 지울까요? 의안의 처리 경과는 그대로 남아요.')) return;
+    await req('meetings', null, { action: 'remove', id: m.id }); location.hash = C('/m');
+  };
+}
+async function meetingEdit(id) {
+  if (CUR.me.role !== 'officer' && CUR.me.role !== 'admin') { app.innerHTML = card('회의록은 임원이 써요', '임원 코드로 들어와 주세요.'); return }
+  const [{ bills }, mine] = await Promise.all([req('bills'), id ? req('meetings', { id }) : req('meetings')]);
+  const m = id ? mine.meeting : { title: `제${mine.meetings.length + 1}차 ${CUR.space.body_name}`, held_on: today(), present: '', enrolled: CUR.space.enrolled || '', items: [], notes: '' };
+  const items = m.items.map(i => Object.assign({}, i));
+  const choosable = bills.filter(b => !isClosed(b) || items.some(i => i.bill_id === b.id));
+  app.innerHTML = `<a class="back" href="${id ? C('/m/' + id) : C('/m')}">← 돌아가기</a>
+    <form class="card narrow form" id="mf"><h1 class="h1">${id ? '회의록 고치기' : '회의록 쓰기'}</h1>
+      ${field('회의 이름', `<input name="title" maxlength="60" required value="${esc(m.title)}">`)}
+      <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+        ${field('날짜', `<input name="held_on" type="date" required value="${esc(m.held_on)}">`)}
+        ${field('출석', `<input name="present" type="number" min="0" inputmode="numeric" value="${esc(m.present)}">`)}
+        ${field('재적', `<input name="enrolled" type="number" min="0" inputmode="numeric" value="${esc(m.enrolled)}">`)}
+      </div>
+      <div class="f">안건<small>계류 중인 의안을 올려요. 처음 올린 의안은 처리 경과에 기록되고, 접수·심사 단계였다면 '상정'으로 바뀌어요.</small></div>
+      <div id="items" class="stack" style="gap:10px"></div>
+      <div><button type="button" class="btn small" id="addItem" ${choosable.length ? '' : 'disabled'}>+ 의안 추가</button></div>
+      ${field('기타 기록', `<textarea name="notes" rows="4" maxlength="3000">${esc(m.notes)}</textarea>`, '건의 사항, 다음 회의 일정 등')}
+      <div class="row"><button class="btn primary lg">저장</button></div><p class="err" id="mfErr"></p>
+    </form>`;
+  const drawItems = () => {
+    $('#items').innerHTML = items.map((it, i) => `<div class="item-ed">
+      <button type="button" class="x" data-del="${i}" aria-label="안건 빼기" style="position:absolute;top:6px;right:6px">×</button>
+      <select data-k="bill_id" data-i="${i}" aria-label="의안" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);margin-right:28px">
+        ${choosable.map(b => `<option value="${b.id}" ${b.id === it.bill_id ? 'selected' : ''}>${billNo(b)} ${esc(b.title)}</option>`).join('')}</select>
+      <textarea data-k="summary" data-i="${i}" rows="3" maxlength="1000" placeholder="논의 요지" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)">${esc(it.summary)}</textarea>
+      <input data-k="result" data-i="${i}" maxlength="100" placeholder="결과 (예: 다음 회의에서 표결)" value="${esc(it.result)}" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)">
+    </div>`).join('');
+  };
+  $('#items').oninput = $('#items').onchange = e => { const t = e.target; if (t.dataset.k) items[+t.dataset.i][t.dataset.k] = t.value };
+  $('#items').onclick = e => { const b = e.target.closest('[data-del]'); if (b) { items.splice(+b.dataset.del, 1); drawItems() } };
+  $('#addItem').onclick = () => {
+    const free = choosable.find(b => !items.some(i => i.bill_id === b.id)) || choosable[0];
+    items.push({ bill_id: free.id, summary: '', result: '' }); drawItems();
+  };
+  drawItems();
+  $('#mf').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target;
+    try {
+      const r = await req('meetings', null, { action: 'save', id, title: f.title.value, held_on: f.held_on.value, present: f.present.value, enrolled: f.enrolled.value, items, notes: f.notes.value });
+      location.hash = C('/m/' + r.meeting.id);
+    } catch (err) { $('#mfErr').textContent = err.message }
+  };
+}
+
+/* ── 표결: 투표 방식 실험실(voting_lab)의 집계·고르기·결과 코드를 그대로 가져옴 ── */
+function best(scores, among) {
+  let top = -Infinity, w = [];
+  among.forEach(i => { if (scores[i] > top) { top = scores[i]; w = [i] } else if (scores[i] === top) w.push(i) });
+  return w;
+}
+function tally(m, groups, k) {
+  const all = [...Array(m).keys()];
+  const total = groups.reduce((s, g) => s + g.n, 0);
+  const firstIn = set => { const s = Array(m).fill(0); groups.forEach(g => s[g.order.find(i => set.includes(i))] += g.n); return s };
+  const first = firstIn(all);
+  const r = { total, first, plurality: best(first, all) };
+  const maj = all.find(i => first[i] * 2 > total);
+  if (maj !== undefined) r.runoff = { majority: true, winners: [maj] };
+  else {
+    const cut = [...first].sort((a, b) => b - a)[1];
+    const finalists = all.filter(i => first[i] >= cut);
+    const final = firstIn(finalists);
+    r.runoff = { majority: false, finalists, final, winners: best(final, finalists) };
+  }
+  r.borda = Array(m).fill(0);
+  r.approval = Array(m).fill(0);
+  groups.forEach(g => g.order.forEach((c, pos) => { r.borda[c] += g.n * (m - 1 - pos); if (pos < k) r.approval[c] += g.n }));
+  r.bordaW = best(r.borda, all);
+  r.approvalW = best(r.approval, all);
+  r.pw = all.map(a => all.map(b => groups.reduce((s, g) => s + (g.order.indexOf(a) < g.order.indexOf(b) ? g.n : 0), 0)));
+  const cw = all.find(a => all.every(b => a === b || r.pw[a][b] > r.pw[b][a]));
+  r.condorcet = cw === undefined ? [] : [cw];
+  return r;
+}
+const candHTML = (cands, i) => `<span class="cand">${esc(cands[i])}</span>`;
+const orderHTML = (cands, order) => `<span class="order">${order.map(i => candHTML(cands, i)).join('<span class="gt">›</span>')}</span>`;
+const bars = (cands, scores, among = [...cands.keys()]) => {
+  const mx = Math.max(1, ...among.map(i => scores[i]));
+  return `<div class="bars">${among.map(i => `<div class="bar${scores[i] === mx && scores[i] > 0 ? ' top' : ''}"><span class="nm">${esc(cands[i])}</span>
+    <span class="tr"><span class="fl" style="width:${scores[i] / mx * 100}%"></span></span><span class="v">${scores[i]}</span></div>`).join('')}</div>`;
+};
+const pwTable = (cands, pw) => `<table class="pw"><tr><th></th>${cands.map((_, j) => `<th>${candHTML(cands, j)}</th>`).join('')}</tr>${cands.map((_, i) => `<tr><th>${candHTML(cands, i)}</th>${cands.map((_, j) =>
+  i === j ? '<td class="self"></td>' : `<td class="${pw[i][j] > pw[j][i] ? 'w' : ''}">${pw[i][j]}</td>`).join('')}</tr>`).join('')}</table>
+  <div class="lbl">왼쪽 후보를 위쪽 후보보다 더 좋아한 사람 수예요. 파란 글자 = 이김</div>`;
+function picker(el, cands, onDone, opts = {}) {
+  const mode = opts.mode || 'rank';
+  let picked = [];
+  const draw = () => {
+    if (mode === 'rank' && picked.length === cands.length - 1) picked.push(cands.findIndex((_, i) => !picked.includes(i)));
+    const full = mode === 'rank' ? picked.length === cands.length : picked.length > 0;
+    el.innerHTML = `<div class="picker${opts.big ? ' big' : ''}"><div class="opts">${cands.map((c, i) => {
+      const rk = picked.indexOf(i);
+      return `<button class="opt" data-i="${i}" ${rk >= 0 ? `data-label="${mode === 'rank' ? rk + 1 + '등' : '선택'}"` : ''} aria-pressed="${rk >= 0}">${candHTML(cands, i)}</button>`;
+    }).join('')}</div><div class="row">
+      <button class="btn small" data-act="reset" ${picked.length ? '' : 'disabled'}>다시 고르기</button>
+      ${opts.cancel ? '<button class="btn small" data-act="cancel">닫기</button>' : ''}
+      <span class="grow"></span>
+      <button class="btn primary${opts.big ? ' lg' : ''}" data-act="ok" ${full ? '' : 'disabled'}>${opts.okText || '확인'}</button></div></div>`;
+  };
+  el.onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.i !== undefined) {
+      const i = +b.dataset.i, at = picked.indexOf(i);
+      if (mode === 'one') picked = [i];
+      else if (mode === 'many' && at >= 0) picked.splice(at, 1);
+      else if (at < 0) picked.push(i);
+    }
+    else if (b.dataset.act === 'reset') picked = [];
+    else if (b.dataset.act === 'cancel') return opts.cancel();
+    else if (b.dataset.act === 'ok') return onDone(mode === 'many' ? picked.slice().sort((a, b) => a - b) : picked.slice());
+    draw();
+  };
+  draw();
+}
+const METHODS = {
+  plurality: { name: '다수결', ballot: 'one', how: '한 개만 골라요', rule: '표를 가장 많이 받은 선택지가 이겨요.' },
+  runoff: { name: '결선투표', ballot: 'rank', how: '순위를 매겨요', rule: '절반보다 많이 받은 선택지가 없으면 1·2위만 남겨 다시 세요. 떨어진 선택지를 고른 사람의 표는 그 사람이 다음으로 좋아한 선택지에게 가요.' },
+  borda: { name: '순위 점수', ballot: 'rank', how: '순위를 매겨요', rule: '1등에 가장 높은 점수, 꼴찌에 0점을 주고 모두 더해요.' },
+  approval: { name: '좋아요 세기', ballot: 'many', how: '좋은 것을 모두 골라요', rule: '좋아요를 가장 많이 받은 선택지가 이겨요.' },
+  condorcet: { name: '일대일 대결', ballot: 'rank', how: '순위를 매겨요', rule: '둘씩 짝지어 비교해요. 모든 대결에서 이긴 선택지가 이겨요.' }
+};
+const lbl = t => `<div class="lbl">${t}</div>`;
+function bigResult(el, st) {
+  const { cands, groups, method } = st, M = METHODS[method], m = cands.length;
+  const total = groups.reduce((s, g) => s + g.n, 0);
+  if (!total) { el.innerHTML = '<div class="card empty">아직 표가 없어요.</div>'; return }
+  const all = [...cands.keys()];
+  let winners, detail, body, compare = '';
+  if (M.ballot !== 'rank') {
+    const s = Array(m).fill(0);
+    groups.forEach(g => g.order.forEach(i => s[i] += g.n));
+    winners = best(s, all);
+    detail = M.ballot === 'one' ? `${total}표 중 ${s[winners[0]]}표` : `${total}명 중 ${s[winners[0]]}명이 좋아요`;
+    body = bars(cands, s);
+  } else {
+    const r = tally(m, groups, Math.min(2, m - 1)), ro = r.runoff;
+    if (method === 'runoff') {
+      winners = ro.winners;
+      detail = ro.majority ? `${total}표 중 ${r.first[winners[0]]}표로 절반을 넘었어요` : `결선에서 ${total}표 중 ${ro.final[winners[0]]}표`;
+      body = ro.majority ? lbl('1등 표') + bars(cands, r.first)
+        : lbl('첫 번째 셈 (1등 표)') + bars(cands, r.first) + lbl('결선 (떨어진 선택지의 표는 다음으로 좋아한 선택지에게)') + bars(cands, ro.final, ro.finalists);
+    } else if (method === 'borda') {
+      winners = r.bordaW;
+      detail = `${r.borda[winners[0]]}점 (1등 ${m - 1}점 … 꼴찌 0점)`;
+      body = bars(cands, r.borda);
+    } else {
+      winners = r.condorcet;
+      detail = winners.length ? '다른 모든 선택지와의 일대일 대결에서 이겼어요' : '가위바위보처럼 돌고 돌아서 모두를 이긴 선택지가 없어요';
+      body = pwTable(cands, r.pw);
+    }
+    const names = w => w.length ? w.map(i => esc(cands[i])).join(', ') + (w.length > 1 ? ' (동점)' : '') : '없음';
+    const rows = [['plurality', r.plurality], ['runoff', ro.winners], ['borda', r.bordaW], ['approval', r.approvalW], ['condorcet', r.condorcet]];
+    compare = `<details><summary>다른 방법으로 셌다면?</summary><ul>${rows.map(([k, w]) =>
+      `<li>${k === method ? '<b>' : ''}${METHODS[k].name}${k === 'approval' ? ` (${Math.min(2, m - 1)}등까지 좋아요로 보면)` : ''}: ${names(w)}${k === method ? '</b>' : ''}</li>`).join('')}</ul></details>`;
+  }
+  el.innerHTML = `<div class="card result">
+    <p class="rlabel">${M.name}로 센 결과</p>
+    <div class="winner${winners.length ? '' : ' none'}">${winners.length ? winners.map(i => esc(cands[i])).join(', ') : '1등 없음'}</div>
+    <p class="wsub">${winners.length > 1 ? '동점이에요. ' : ''}${detail}</p>
+    <p class="rule">${M.rule}</p>
+    <div class="body">${body}</div>${compare}</div>`;
+}
+
+let voter = load('bills-voter', '');
+if (!/^[a-z0-9]{8,40}$/.test(voter)) { voter = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()) + Date.now()).replace(/[^a-z0-9]/g, '').slice(0, 32); save('bills-voter', voter) }
+const myVotes = load('bills-myvotes', {});   // 표결 id → 내가 고른 것 (내 화면에 보여 주기용)
+const isOfficer = () => CUR.me.role === 'officer' || CUR.me.role === 'admin';
+const voteKind = v => v.kind === 'yesno' ? '찬반 표결' : '선택 표결 · ' + METHODS[v.method].name;
+
+async function votesPage() {
+  const [{ votes }, billsRes] = await Promise.all([req('votes'), isOfficer() ? req('bills') : null]);
+  app.innerHTML = `<h1 class="h1" style="margin-bottom:14px">표결</h1>
+    <div class="cols2" style="margin-top:0">
+      <div>${votes.length ? `<div class="blist">${votes.map(v => `<a class="bl-r" style="grid-template-columns:minmax(0,1fr) auto auto" href="${C('/v/' + v.id)}">
+        <span class="t">${esc(v.title)}<small>${esc(voteKind(v))}</small></span><span>${day(v.created_at)}</span>
+        <span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : v.revealed ? '결과 공개' : '마감'}</span></a>`).join('')}</div>`
+        : '<div class="card empty">아직 표결이 없어요.</div>'}</div>
+      <div>${isOfficer() ? `<form class="card form" id="vf"><h2>새 표결</h2>
+        <div class="seg" id="vk"><button type="button" data-k="yesno" aria-pressed="true">찬반 (의안)</button><button type="button" data-k="choice" aria-pressed="false">여러 선택지</button></div>
+        <div id="vfields" class="form"></div>
+        <div class="row"><button class="btn primary">표결 시작</button></div><p class="err" id="vfErr"></p></form>` : ''}</div>
+    </div>`;
+  if (!isOfficer()) return;
+  const pending = billsRes.bills.filter(b => ['received', 'review', 'tabled'].includes(b.stage));
+  let kind = 'yesno', method = 'plurality';
+  const drawFields = () => {
+    $('#vfields').innerHTML = kind === 'yesno'
+      ? (pending.length ? field('의안', `<select name="bill_id">${pending.map(b => `<option value="${b.id}">${billNo(b)} ${esc(b.title)}</option>`).join('')}</select>`, '찬성·반대·기권으로 표결하고, 결과를 의안의 의결 결과로 옮길 수 있어요.')
+        : '<p class="sub" style="margin:0">표결할 수 있는 의안(접수·심사·상정 단계)이 없어요.</p>')
+      : field('표결 제목', '<input name="title" maxlength="80" required placeholder="예: 체육대회 종목 정하기">') +
+        field('선택지', '<textarea name="options" rows="4" required placeholder="한 줄에 하나씩 (2~6개)"></textarea>') +
+        `<div class="f">세는 방법<div class="mpick" id="vm">${Object.entries(METHODS).map(([k, M]) => `<button type="button" data-m="${k}" aria-pressed="${k === method}"><b>${M.name}</b><span>${M.how}</span></button>`).join('')}</div></div>`;
+    const vm = $('#vm');
+    if (vm) vm.onclick = e => { const b = e.target.closest('[data-m]'); if (b) { method = b.dataset.m; vm.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)) } };
+  };
+  $('#vk').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; kind = b.dataset.k; $('#vk').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); drawFields() };
+  drawFields();
+  $('#vf').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target;
+    const body = kind === 'yesno' ? { action: 'start', kind, bill_id: f.bill_id && f.bill_id.value } : { action: 'start', kind, title: f.title.value, options: lines(f.options.value), method };
+    try { const r = await req('votes', null, body); location.hash = C('/v/' + r.vote.id) } catch (err) { $('#vfErr').textContent = err.message }
+  };
+}
+
+async function votePage(id) {
+  const V = { phase: '', shown: '', editing: false };
+  app.innerHTML = `<a class="back" href="${C('/v')}">← 표결 목록</a><section class="card" id="vh"></section>
+    <section class="card narrow" id="vb" style="margin-top:16px"></section><div id="vr" style="margin-top:16px"></div><p class="err" id="ve"></p>`;
+  const refresh = async () => {
+    try { renderVote(await req('votes', { id }), V); $('#ve').textContent = '' }
+    catch (e) { $('#ve').textContent = e.message; if (e.status === 404) stopPoll() }
+  };
+  startPoll(refresh);
+}
+function renderVote(d, V) {
+  const v = d.vote, me = CUR.me, cands = v.options;
+  if (!$('#vh')) return;
+  const rule = d.pass_rule === 'two_thirds' ? '출석 3분의 2' : '출석 과반';
+  $('#vh').innerHTML = `<p class="sub" style="margin:0">${esc(voteKind(v))}${d.bill ? ` · <a href="${C('/b/' + d.bill.id)}">${billNo(d.bill)} ${esc(d.bill.title)}</a>` : ''}</p>
+    <h1 class="h1">${esc(v.title)}</h1>
+    <div class="row" style="margin-top:10px"><span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : '마감'}</span>
+      <span><b style="font-size:22px">${d.count}</b>명 참여${d.enrolled ? ` · 재적 ${d.enrolled}명` : ''}</span><span class="grow"></span>
+      ${isOfficer() ? `<button class="btn" data-act="open">${v.open ? '표결 마감' : '다시 열기'}</button><button class="btn primary" data-act="reveal">${v.revealed ? '결과 가리기' : '결과 공개'}</button>
+        ${v.kind === 'yesno' && d.bill && !v.applied && !v.open ? '<button class="btn" data-act="apply">의안에 반영</button>' : ''}` : ''}</div>
+    ${v.applied ? '<p class="sub" style="margin:10px 0 0">이 결과는 의안의 의결 결과로 옮겨졌어요.</p>' : ''}`;
+  $('#vh').onclick = async e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    try {
+      if (b.dataset.act === 'apply') {
+        if (!confirm('표결 결과를 의안의 의결 결과로 옮길까요?')) return;
+        await req('votes', null, { action: 'apply', id: v.id });
+      } else await req('votes', null, Object.assign({ action: 'update', id: v.id }, b.dataset.act === 'open' ? { open: !v.open } : { revealed: !v.revealed }));
+      V.shown = ''; renderVote(await req('votes', { id: v.id }), V);
+    } catch (err) { $('#ve').textContent = err.message }
+  };
+
+  // 표 내기 (화면을 다시 그리면 고르던 것이 지워지므로 단계가 바뀔 때만 그림)
+  const mine = myVotes[v.id];
+  const mode = v.kind === 'yesno' ? 'one' : METHODS[v.method].ballot;
+  const phase = !v.open ? 'closed' + v.revealed : me.role === 'view' ? 'view' : mine && !V.editing ? 'voted' : 'pick';
+  const mineHTML = !mine ? '' : mode === 'rank' ? `<p>내가 고른 순서: ${orderHTML(cands, mine)}</p>` : `<p>내가 고른 것: <b>${mine.map(i => esc(cands[i])).join(', ')}</b></p>`;
+  if (phase !== V.phase) {
+    V.phase = phase;
+    const vb = $('#vb');
+    if (phase === 'view') vb.innerHTML = '<p class="sub" style="margin:0">표결은 제안 코드나 임원 코드로 들어온 기기에서 참여할 수 있어요. 위의 \'권한 코드\'를 눌러 넣어 주세요.</p>';
+    else if (!v.open) vb.innerHTML = `<p style="margin:0"><b>표결이 마감되었어요.</b> ${v.revealed ? '' : '결과는 임원이 공개하면 보여요.'}</p>${mineHTML}`;
+    else if (phase === 'voted') {
+      vb.innerHTML = `<p style="margin:0"><b>투표했어요.</b> 마감 전에는 다시 고를 수 있어요.</p>${mineHTML}<button class="btn" id="redo">다시 고르기</button>`;
+      $('#redo').onclick = () => { V.editing = true; renderVote(d, V) };
+    } else {
+      const tip = v.kind === 'yesno' ? '찬성, 반대, 기권 중 하나를 골라 주세요.' : { one: '하나만 골라 주세요.', many: '좋다고 생각하는 것을 모두 골라 주세요.', rank: '좋은 것부터 차례로 눌러 주세요. 마지막은 저절로 정해져요.' }[mode];
+      vb.innerHTML = `<p class="sub">${tip} 한 기기에서 한 표만 낼 수 있어요.</p><div id="vpick"></div>`;
+      picker($('#vpick'), cands, choice => {
+        req('votes', null, { action: 'cast', id: v.id, voter, choice }).then(() => {
+          myVotes[v.id] = choice; save('bills-myvotes', myVotes); V.editing = false; V.phase = '';
+          req('votes', { id: v.id }).then(nd => renderVote(nd, V));
+        }).catch(err => { $('#ve').textContent = err.message });
+      }, { big: true, mode, okText: '투표하기', cancel: mine ? () => { V.editing = false; renderVote(d, V) } : null });
+    }
+  }
+
+  // 결과: 공개된 뒤에만 (임원 화면을 칠판에 띄워도 미리 보이지 않게)
+  const key = v.revealed ? JSON.stringify(d.result || d.groups) : 'hidden';
+  if (key === V.shown) return;
+  V.shown = key;
+  const vr = $('#vr');
+  if (!v.revealed) { vr.innerHTML = ''; return }
+  if (v.kind === 'choice') return bigResult(vr, { cands, groups: d.groups, method: v.method });
+  const r = d.result;
+  const quorum = d.enrolled ? ` 재적 ${d.enrolled}명 중 ${r.total}명이 참여했어요${r.total * 2 > d.enrolled ? '.' : '. (재적 과반 미달)'}` : '';
+  vr.innerHTML = `<div class="card result"><p class="rlabel">표결 결과</p>
+    <div class="winner${r.passed ? '' : ' none'}">${r.total ? (r.passed ? '가결' : '부결') : '표 없음'}</div>
+    <p class="wsub">찬성 ${r.yes} · 반대 ${r.no} · 기권 ${r.abstain}</p>
+    <p class="rule">${rule} 찬성이면 가결이에요. 참여 ${r.total}명 중 ${r.needed}명 이상 찬성해야 해요.${quorum}</p>
+    <div class="body">${bars(['찬성', '반대', '기권'], [r.yes, r.no, r.abstain])}</div></div>`;
+}
+
+route();
+</script>
+</body>
+</html>
