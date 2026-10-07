@@ -107,6 +107,10 @@ create table if not exists room_ballots (
   primary key (room_code, voter)
 );
 
+-- 새 프로젝트에서 '새 표 자동 공개(Automatically expose new tables)'를 껐으므로 서버(service_role)에만 직접 허용
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table spaces, bills, bill_events, meetings, votes, ballots, rooms, room_ballots to service_role;
+
 alter table rooms enable row level security;
 alter table room_ballots enable row level security;
 alter table spaces enable row level security;
