@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학생자치 의안정보시스템</title>
+<title>C-Link 학생자치 의안정보시스템</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css">
 <style>
 /* 의안이 접수부터 이행까지 어떻게 처리되는지 기록·공개. 화면은 해시 주소(#/공간코드/...)로 나뉜다. 디자인은 홈페이지 DESIGN.md 규칙. */
@@ -190,7 +190,7 @@ footer a{color:inherit}
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#/">학생자치 의안정보시스템</a>
+  <a class="brand" href="#/">C-Link <span style="font-weight:400;color:var(--muted);font-size:14px">학생자치 의안정보시스템</span></a>
   <nav id="nav" aria-label="메뉴" hidden></nav>
   <div id="who"></div>
 </header>
@@ -361,6 +361,9 @@ function home() {
     <div class="card"><h2>처음 쓰시는 선생님</h2>
       <p class="sub">학교 학생회나 우리 반 학급회의 공간을 만들고, 학생들에게 나눠 줄 코드를 받아요.</p>
       <a class="btn" href="#/new">새 공간 만들기</a></div>
+    <div class="card"><h2>투표 방식 실험실</h2>
+      <p class="sub">공간 없이 바로 투표방을 열어요. 다수결, 결선투표, 순위 점수, 좋아요 세기, 일대일 대결 중 하나로 세고, 같은 표라도 세는 방법에 따라 1등이 바뀌는 것을 실험해 볼 수 있어요.</p>
+      <a class="btn" href="/vote/">투표 방식 실험실 열기</a></div>
   </div>`;
   $('#enterForm').onsubmit = async e => {
     e.preventDefault();
@@ -862,7 +865,8 @@ async function votesPage() {
         : '<p class="sub" style="margin:0">표결할 수 있는 의안(접수·심사·상정 단계)이 없어요.</p>')
       : field('표결 제목', '<input name="title" maxlength="80" required placeholder="예: 체육대회 종목 정하기">') +
         field('선택지', '<textarea name="options" rows="4" required placeholder="한 줄에 하나씩 (2~6개)"></textarea>') +
-        `<div class="f">세는 방법<div class="mpick" id="vm">${Object.entries(METHODS).map(([k, M]) => `<button type="button" data-m="${k}" aria-pressed="${k === method}"><b>${M.name}</b><span>${M.how}</span></button>`).join('')}</div></div>`;
+        `<div class="f">세는 방법<div class="mpick" id="vm">${Object.entries(METHODS).map(([k, M]) => `<button type="button" data-m="${k}" aria-pressed="${k === method}"><b>${M.name}</b><span>${M.how}</span></button>`).join('')}</div>
+          <small>방법마다 결과가 어떻게 달라지는지 <a href="/vote/?mode=lab" target="_blank" rel="noopener">투표 방식 실험실</a>에서 미리 볼 수 있어요.</small></div>`;
     const vm = $('#vm');
     if (vm) vm.onclick = e => { const b = e.target.closest('[data-m]'); if (b) { method = b.dataset.m; vm.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)) } };
   };

@@ -1,6 +1,6 @@
 // 서버 흐름 점검: node check.js (환경 변수 없이 메모리 저장소로 실행, 배포에는 포함하지 않음)
 const assert = require('assert');
-const api = { space: require('./api/space'), bills: require('./api/bills'), meetings: require('./api/meetings'), votes: require('./api/votes') };
+const api = { space: require('./api/space'), bills: require('./api/bills'), meetings: require('./api/meetings'), votes: require('./api/votes'), room: require('./api/room') };
 
 async function call(name, token, body, query) {
     const req = { method: body ? 'POST' : 'GET', headers: { 'x-token': token || '' }, body, query: query || {} };
@@ -73,6 +73,19 @@ async function call(name, token, body, query) {
     // 철회: 자기 단위 의안만
     const b3 = (await call('bills', u2, { action: 'create', title: '청소 당번표', reason: 'r', content: 'c', role: '회장' })).bill;
     assert.strictEqual((await call('bills', u2, { action: 'advance', id: b3.id, to: 'withdrawn' })).bill.stage, 'withdrawn');
+
+    // 투표 방식 실험실의 투표방
+    const room = await call('room', '', { action: 'create', q: '학급 행사', cands: ['영화', '체육', '보드게임'], method: 'approval' });
+    assert.ok(/^\d{6}$/.test(room.code), room.error);
+    assert.strictEqual((await call('room', '', { action: 'vote', code: room.code, voter: 'roomdev1', order: [2, 0] })).status, 200);
+    assert.strictEqual((await call('room', '', { action: 'vote', code: room.code, voter: 'roomdev1', order: [1] })).status, 200); // 다시 고르기
+    assert.strictEqual((await call('room', '', { action: 'vote', code: room.code, voter: 'roomdev2', order: [0, 0] })).status, 400);
+    assert.strictEqual((await call('room', '', null, { code: room.code })).groups, undefined); // 공개 전
+    assert.strictEqual((await call('room', '', { action: 'update', code: room.code, key: 'wrong', revealed: true })).status, 403);
+    const shown = await call('room', '', { action: 'update', code: room.code, key: room.key, open: false, revealed: true });
+    assert.deepStrictEqual([shown.count, shown.groups], [1, [{ order: [1], n: 1 }]]);
+    assert.strictEqual((await call('room', '', { action: 'vote', code: room.code, voter: 'roomdev3', order: [1] })).status, 409);
+    assert.strictEqual((await call('room', '', null, { code: '000000' })).status, 404);
 
     console.log('모든 점검 통과');
 })().catch(e => { console.error(e); process.exit(1); });

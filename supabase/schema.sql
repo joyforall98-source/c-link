@@ -87,6 +87,28 @@ create table if not exists ballots (
   primary key (vote_id, voter)
 );
 
+-- 투표 방식 실험실(/vote/)의 투표방: 방 번호 6자리, 2일 뒤 만료 (새 방을 만들 때 지난 방을 지움)
+create table if not exists rooms (
+  code text primary key,
+  q text not null default '',
+  cands jsonb not null,
+  method text not null,
+  open boolean not null,
+  revealed boolean not null,
+  key_hash text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null
+);
+
+create table if not exists room_ballots (
+  room_code text not null references rooms(code) on delete cascade,
+  voter text not null,
+  choice jsonb not null,
+  primary key (room_code, voter)
+);
+
+alter table rooms enable row level security;
+alter table room_ballots enable row level security;
 alter table spaces enable row level security;
 alter table bills enable row level security;
 alter table bill_events enable row level security;
