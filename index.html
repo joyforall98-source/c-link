@@ -655,9 +655,11 @@ async function meetingPage(id) {
   const [{ meeting: m }, { bills }] = await Promise.all([req('meetings', { id }), req('bills')]);
   const byId = Object.fromEntries(bills.map(b => [b.id, b]));
   const officer = CUR.me.role === 'officer' || CUR.me.role === 'admin';
-  app.innerHTML = `<a class="back" href="${C('/m')}">← 회의록</a>
+  app.innerHTML = `<a class="back noprint" href="${C('/m')}">← 회의록</a>
     <section class="card">
-      <div class="row"><h1 class="h1 grow">${esc(m.title)}</h1>${officer ? `<a class="btn small" href="${C('/m/' + m.id + '/edit')}">고치기</a><button class="btn small danger" id="mDel">지우기</button>` : ''}</div>
+      <p class="sub" style="margin:0">${esc(CUR.space.name)}</p>
+      <div class="row"><h1 class="h1 grow">${esc(m.title)} 회의록</h1><span class="row noprint"><button class="btn small" id="mPrint">인쇄</button>
+        ${officer ? `<a class="btn small" href="${C('/m/' + m.id + '/edit')}">고치기</a><button class="btn small danger" id="mDel">지우기</button>` : ''}</span></div>
       <dl class="meta"><div><dt>날짜</dt><dd>${esc(m.held_on.replace(/-/g, '.'))}</dd></div>
         <div><dt>출석</dt><dd>${m.enrolled ? `재적 ${m.enrolled}명 중 ${m.present}명` : m.present ? m.present + '명' : '-'}</dd></div></dl>
     </section>
@@ -667,6 +669,7 @@ async function meetingPage(id) {
         ${it.summary ? `<p class="pre" style="margin:0 0 4px">${esc(it.summary)}</p>` : ''}${it.result ? `<p class="sub" style="margin:0">결과: ${esc(it.result)}</p>` : ''}</div>` }).join('') : '<p class="sub" style="margin:0">올린 의안이 없어요.</p>'}
     </section>
     ${m.notes ? `<section class="card" style="margin-top:16px"><h2>기타 기록</h2><p class="pre" style="margin:0">${esc(m.notes)}</p></section>` : ''}`;
+  $('#mPrint').onclick = () => window.print();
   if (officer) $('#mDel').onclick = async () => {
     if (!confirm('이 회의록을 지울까요? 의안의 처리 경과는 그대로 남아요.')) return;
     await req('meetings', null, { action: 'remove', id: m.id }); location.hash = C('/m');
@@ -686,6 +689,8 @@ async function meetingEdit(id) {
         ${field('출석', `<input name="present" type="number" min="0" inputmode="numeric" value="${esc(m.present)}">`)}
         ${field('재적', `<input name="enrolled" type="number" min="0" inputmode="numeric" value="${esc(m.enrolled)}">`)}
       </div>
+      <div class="note" style="margin:0"><b>자동으로 채우기</b>이 날짜에 한 표결 결과, 상정된 의안, 표결 참여 인원으로 초안을 채워요. 이미 쓴 내용은 그대로 두고 빈 곳만 채워요.
+        <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="autoBtn">기록으로 채우기</button><span class="sub" id="autoMsg" style="margin:0"></span></div></div>
       <div class="f">안건<small>계류 중인 의안을 올려요. 처음 올린 의안은 처리 경과에 기록되고, 접수·심사 단계였다면 '상정'으로 바뀌어요.</small></div>
       <div id="items" class="stack" style="gap:10px"></div>
       <div><button type="button" class="btn small" id="addItem" ${choosable.length ? '' : 'disabled'}>+ 의안 추가</button></div>
@@ -708,6 +713,16 @@ async function meetingEdit(id) {
     items.push({ bill_id: free.id, summary: '', result: '' }); drawItems();
   };
   drawItems();
+  const auto = async () => {
+    $('#autoMsg').textContent = '불러오는 중…';
+    try {
+      const r = await autofill($('#mf'), items, choosable, bills);
+      drawItems(); $('#addItem').disabled = !choosable.length;
+      $('#autoMsg').textContent = r.bills || r.votes ? `의안 ${r.bills}건, 표결 ${r.votes}건을 불러왔어요. 논의 내용을 덧붙여 주세요.` : '이 날짜에 상정된 의안이나 표결이 없어요.';
+    } catch (err) { $('#autoMsg').textContent = err.message }
+  };
+  $('#autoBtn').onclick = auto;
+  if (!id) auto(); // 새 회의록은 열자마자 초안을 채움
   $('#mf').onsubmit = async e => {
     e.preventDefault();
     const f = e.target;
@@ -716,6 +731,33 @@ async function meetingEdit(id) {
       location.hash = C('/m/' + r.meeting.id);
     } catch (err) { $('#mfErr').textContent = err.message }
   };
+}
+// 회의록 초안: 그 날짜의 표결 결과, 상정·의결된 의안, 표결 참여 인원(출석 추정)을 빈 칸에만 채움
+async function autofill(f, items, choosable, bills) {
+  const date = f.held_on.value;
+  const onDay = iso => iso && day(iso) === date.replace(/-/g, '.');
+  const { votes } = await req('votes');
+  const details = await Promise.all(votes.filter(v => onDay(v.created_at)).map(v => req('votes', { id: v.id })));
+  const resultText = d => {
+    const v = d.vote, r = d.result;
+    if (v.kind === 'yesno') return v.open || !r ? `찬반 표결 진행 중 (${d.count}명 참여)` : `찬반 표결 ${r.passed ? '가결' : '부결'} (찬성 ${r.yes}, 반대 ${r.no}, 기권 ${r.abstain})`;
+    const w = d.groups && d.groups.length ? winnersOf(v.options, d.groups, v.method) : null;
+    return `${METHODS[v.method].name} 선택 표결${w ? ': ' + (w.length ? w.map(i => v.options[i]).join(', ') + (w.length > 1 ? ' 동점' : '') : '1등 없음') : ''} (${d.count}명 참여)`;
+  };
+  const byBill = {};
+  details.forEach(d => { if (d.vote.bill_id) (byBill[d.vote.bill_id] = byBill[d.vote.bill_id] || []).push(resultText(d)) });
+  const wanted = bills.filter(b => b.stage === 'tabled' || byBill[b.id] || (b.stage === 'decided' && onDay(b.updated_at)));
+  for (const b of wanted) {
+    if (!choosable.includes(b)) choosable.push(b);
+    let it = items.find(i => i.bill_id === b.id);
+    if (!it) items.push(it = { bill_id: b.id, summary: '', result: '' });
+    if (!it.summary) it.summary = `제안 설명(${b.unit} ${b.role}): ${b.reason}`.slice(0, 1000);
+    if (!it.result) it.result = ((byBill[b.id] || []).join(' / ') || (b.stage === 'decided' ? '의결: ' + RESULT[b.result] : '계속 논의')).slice(0, 100);
+  }
+  if (!f.present.value) { const mx = Math.max(0, ...details.map(d => d.count)); if (mx) f.present.value = mx }
+  const free = details.filter(d => !d.vote.bill_id).map(d => `- ${d.vote.title}: ${resultText(d)}`).filter(t => !f.notes.value.includes(t));
+  if (free.length) f.notes.value = (f.notes.value ? f.notes.value + '\n' : '') + '선택 표결\n' + free.join('\n');
+  return { bills: wanted.length, votes: details.length };
 }
 
 /* ── 표결: 투표 방식 실험실(voting_lab)의 집계·고르기·결과 코드를 그대로 가져옴 ── */
@@ -796,6 +838,13 @@ const METHODS = {
   condorcet: { name: '일대일 대결', ballot: 'rank', how: '순위를 매겨요', rule: '둘씩 짝지어 비교해요. 모든 대결에서 이긴 선택지가 이겨요.' }
 };
 const lbl = t => `<div class="lbl">${t}</div>`;
+// 세는 방법에 따른 1등 (회의록 초안용)
+function winnersOf(cands, groups, method) {
+  const m = cands.length, all = [...cands.keys()];
+  if (METHODS[method].ballot !== 'rank') { const s = Array(m).fill(0); groups.forEach(g => g.order.forEach(i => s[i] += g.n)); return best(s, all) }
+  const r = tally(m, groups, Math.min(2, m - 1));
+  return { runoff: r.runoff.winners, borda: r.bordaW, condorcet: r.condorcet }[method];
+}
 function bigResult(el, st) {
   const { cands, groups, method } = st, M = METHODS[method], m = cands.length;
   const total = groups.reduce((s, g) => s + g.n, 0);
