@@ -16,7 +16,7 @@ function passResult(yes, no, abstain, rule) {
 
 async function findVote(ctx, id) {
     const [v] = await db.select('votes', { id: String(id || ''), space_id: ctx.space.id });
-    if (!v) fail(404, '그런 표결이 없어요.');
+    if (!v) fail(404, '그런 투표가 없어요.');
     return v;
 }
 async function summary(ctx, v) {
@@ -60,10 +60,10 @@ module.exports = handler({
                 options = (Array.isArray(b.options) ? b.options : []).map(o => text(o, 20, '선택지')).filter(Boolean);
                 if (options.length < 2 || options.length > 6) fail(400, '선택지는 2~6개여야 해요.');
                 method = BALLOT[b.method] ? b.method : 'plurality';
-            } else if (!bill) fail(400, '찬반 표결은 의안을 골라야 해요.');
+            } else if (!bill) fail(400, '찬반 투표는 안건을 골라야 해요.');
             const v = {
                 id: newId(), space_id: ctx.space.id, bill_id: bill ? bill.id : null,
-                title: text(b.title, 80, '표결 제목') || (bill ? bill.title : fail(400, '표결 제목을 입력해 주세요.')),
+                title: text(b.title, 80, '투표 제목') || (bill ? bill.title : fail(400, '투표 제목을 입력해 주세요.')),
                 kind, method, options, open: true, revealed: false, applied: false, created_at: now()
             };
             await db.insert('votes', v);
@@ -72,7 +72,7 @@ module.exports = handler({
         cast: async ctx => {
             need(ctx, 'voter');
             const v = await findVote(ctx, ctx.body.id);
-            if (!v.open) fail(409, '표결이 마감되었어요.');
+            if (!v.open) fail(409, '투표가 끝났어요.');
             const voter = String(ctx.body.voter || '');
             if (!/^[a-z0-9]{8,40}$/.test(voter)) fail(400, '기기 정보가 올바르지 않아요.');
             const c = Array.isArray(ctx.body.choice) ? ctx.body.choice.map(Number) : [];
@@ -96,14 +96,14 @@ module.exports = handler({
         apply: async ctx => {
             need(ctx, 'officer');
             const v = await findVote(ctx, ctx.body.id);
-            if (v.kind !== 'yesno' || !v.bill_id) fail(400, '의안에 연결된 찬반 표결만 반영할 수 있어요.');
-            if (v.open) fail(400, '먼저 표결을 마감해 주세요.');
-            if (v.applied) fail(400, '이미 반영했어요.');
+            if (v.kind !== 'yesno' || !v.bill_id) fail(400, '안건에 연결된 찬반 투표만 결과를 넣을 수 있어요.');
+            if (v.open) fail(400, '먼저 투표를 마감해 주세요.');
+            if (v.applied) fail(400, '이미 결과를 넣었어요.');
             const bill = await findBill(ctx, v.bill_id);
-            if (!['received', 'review', 'tabled'].includes(bill.stage)) fail(400, '이미 의결했거나 끝난 의안이에요.');
+            if (!['received', 'review', 'tabled'].includes(bill.stage)) fail(400, '이미 결정했거나 끝난 안건이에요.');
             const { result: r } = await summary(ctx, v);
-            const rule = ctx.space.pass_rule === 'two_thirds' ? '출석 3분의 2' : '출석 과반';
-            const note = `표결: 찬성 ${r.yes}, 반대 ${r.no}, 기권 ${r.abstain} (${rule} 찬성 ${r.needed}표 필요)`;
+            const rule = ctx.space.pass_rule === 'two_thirds' ? '참석자 3분의 2 이상' : '참석자 절반보다 많이';
+            const note = `투표: 찬성 ${r.yes}, 반대 ${r.no}, 기권 ${r.abstain} (${rule} 찬성해야 통과, ${r.needed}표 필요)`;
             const saved = await moveBill(bill, { stage: 'decided', result: r.passed ? 'passed' : 'rejected', yes_count: r.yes, no_count: r.no, abstain_count: r.abstain }, note, ctx.sess.r);
             await db.update('votes', { id: v.id }, { applied: true });
             return { bill: saved };

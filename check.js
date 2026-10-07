@@ -27,6 +27,12 @@ async function call(name, token, body, query) {
     const b1 = (await call('bills', u1, { action: 'create', title: '복도에 정수기 설치', reason: '물 마시기 불편', content: '2층 복도에 한 대', role: '회장', category: '시설·환경' })).bill;
     const b2 = (await call('bills', u2, { action: 'create', title: '점심시간 축구장 순번제', reason: '자리 다툼', content: '요일별 순번', role: '부회장' })).bill;
     assert.deepStrictEqual([b1.seq, b2.seq, b1.unit], [1, 2, '1학년 1반']);
+    // 임원도 안건을 냄 ('학생회 임원' 이름으로), 선생님(관리 코드)은 내지 않음
+    const ob = (await call('bills', officer, { action: 'create', title: '학생회 게시판 새로 꾸미기', reason: '낡았어요', content: '새 게시판', role: '회장' })).bill;
+    assert.deepStrictEqual([ob.unit, ob.seq], ['학생회 임원', 3]);
+    assert.strictEqual((await call('bills', admin, { action: 'create', title: 't', reason: 'r', content: 'c', role: '회장' })).status, 403);
+    const obEvents = (await call('bills', viewer, null, { id: ob.id })).events;
+    assert.deepStrictEqual([obEvents[0].by_role, obEvents[0].note], ['officer', '안건 제안']);
 
     // 단계 바꾸기 권한
     assert.strictEqual((await call('bills', viewer, { action: 'advance', id: b1.id, to: 'review' })).status, 403);

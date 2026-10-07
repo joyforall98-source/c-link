@@ -16,10 +16,11 @@ const NEXT = {
     answered: ['done']
 };
 const RESULTS = ['passed', 'amended', 'rejected'];
+const officerName = space => space.kind === 'class' ? '학급 임원' : '학생회 임원';
 
 async function findBill(ctx, id) {
     const [bill] = await db.select('bills', { id: String(id || ''), space_id: ctx.space.id });
-    if (!bill) fail(404, '그런 의안이 없어요.');
+    if (!bill) fail(404, '그런 안건이 없어요.');
     return bill;
 }
 const event = (bill, stage, note, by) =>
@@ -55,47 +56,50 @@ module.exports = handler({
     },
     POST: {
         create: async ctx => {
-            need(ctx, 'unit');
+            need(ctx, 'view');
+            // 학급(모둠) 대표는 자기 학급 이름으로, 임원은 '학생회 임원'(학급 공간은 '학급 임원') 이름으로 냄
+            const by = ctx.sess.r;
+            if (by !== 'unit' && by !== 'officer') fail(403, '안건은 학급(모둠) 대표나 임원이 낼 수 있어요.');
             const b = ctx.body;
             const bill = {
                 id: newId(), space_id: ctx.space.id, year: schoolYear(),
                 title: text(b.title, 80, '제목', true),
-                reason: text(b.reason, 1000, '제안 이유', true),
-                content: text(b.content, 2000, '주요 내용', true),
+                reason: text(b.reason, 1000, '필요한 까닭', true),
+                content: text(b.content, 2000, '바라는 내용', true),
                 category: CATEGORIES.includes(b.category) ? b.category : '기타',
-                unit: ctx.sess.u,
-                role: ctx.space.roles.includes(b.role) ? b.role : fail(400, '직책을 골라 주세요.'),
+                unit: by === 'unit' ? ctx.sess.u : officerName(ctx.space),
+                role: ctx.space.roles.includes(b.role) ? b.role : fail(400, '역할을 골라 주세요.'),
                 stage: 'received', result: null, yes_count: null, no_count: null, abstain_count: null, reply: null,
                 created_at: now(), updated_at: now()
             };
             const all = await db.select('bills', { space_id: ctx.space.id });
-            if (all.length >= MAX_BILLS) fail(400, '의안 수가 너무 많아요. 선생님께 알려 주세요.');
+            if (all.length >= MAX_BILLS) fail(400, '안건 수가 너무 많아요. 선생님께 알려 주세요.');
             // 일련번호: 같은 학년도 안에서 1부터. 동시에 접수되면 다시 매김
             let seq = Math.max(0, ...all.filter(x => x.year === bill.year).map(x => x.seq));
             for (let i = 0; ; i++) {
                 try { bill.seq = ++seq; await db.insert('bills', bill); break; }
                 catch (e) { if (!(e instanceof db.Conflict) || i > 5) throw e; }
             }
-            await event(bill, 'received', '의안 접수', 'unit');
+            await event(bill, 'received', '안건 제안', by);
             return { bill };
         },
         advance: async ctx => {
             need(ctx, 'view');
             const b = ctx.body, bill = await findBill(ctx, b.id), to = b.to;
             if (!(NEXT[bill.stage] || []).includes(to)) fail(400, '지금 단계에서는 그 단계로 바꿀 수 없어요.');
-            // 철회는 낸 제안 단위도, 학교 답변은 교사만
+            // 제안 취소는 낸 학급(모둠)도, 학교 답변은 교사만
             if (to === 'withdrawn' && ctx.sess && ctx.sess.r === 'unit') {
-                if (ctx.sess.u !== bill.unit) fail(403, '자기 제안 단위의 의안만 철회할 수 있어요.');
+                if (ctx.sess.u !== bill.unit) fail(403, '우리 학급(모둠)이 낸 안건만 제안을 취소할 수 있어요.');
             } else need(ctx, to === 'answered' ? 'admin' : 'officer');
 
             const note = text(b.note, 500, '메모') || (to === 'answered' ? '답변 등록' : '');
             const patch = { stage: to };
-            if (to === 'returned' && !note) fail(400, '반려 이유를 적어 주세요.');
+            if (to === 'returned' && !note) fail(400, '돌려보내는 까닭을 적어 주세요.');
             if (to === 'decided') {
-                if (!RESULTS.includes(b.result)) fail(400, '의결 결과(가결·수정 가결·부결)를 골라 주세요.');
+                if (!RESULTS.includes(b.result)) fail(400, '결정(통과·고쳐서 통과·통과 못 함)을 골라 주세요.');
                 Object.assign(patch, { result: b.result, yes_count: count(b.yes, '찬성'), no_count: count(b.no, '반대'), abstain_count: count(b.abstain, '기권') });
             }
-            if (to === 'proposed' && bill.result === 'rejected') fail(400, '부결된 의안은 건의할 수 없어요.');
+            if (to === 'proposed' && bill.result === 'rejected') fail(400, '통과하지 못한 안건은 학교에 전달할 수 없어요.');
             if (to === 'answered') patch.reply = text(b.reply, 1000, '답변', true);
             const saved = await moveBill(bill, patch, note, ctx.sess.r);
             return { bill: saved };

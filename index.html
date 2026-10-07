@@ -6,7 +6,7 @@
 <title>C-Link 학생자치 의안정보시스템</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css">
 <style>
-/* 의안이 접수부터 이행까지 어떻게 처리되는지 기록·공개. 화면은 해시 주소(#/공간코드/...)로 나뉜다. 디자인은 홈페이지 DESIGN.md 규칙. */
+/* 안건이 접수부터 이행까지 어떻게 처리되는지 기록·공개. 화면은 해시 주소(#/공간코드/...)로 나뉜다. 디자인은 홈페이지 DESIGN.md 규칙. */
 :root{
   --bg:#f6f5f4; --panel:#ffffff; --panel-2:#fafaf9; --line:#e5e3df; --line-2:#c8c4be;
   --ink:#1a1a1a; --muted:#5d5b54; --accent:#1e3a8a; --accent-ink:#fff; --bar:#c8c4be;
@@ -84,7 +84,7 @@ ul.plain li:first-child{border-top:0}
 .gen input{width:4.2em;padding:4px 6px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)}
 input.code{width:100%;text-align:center;font-size:30px;font-weight:600;letter-spacing:.2em;padding:12px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);text-transform:uppercase}
 .radios{display:flex;gap:6px 14px;flex-wrap:wrap;font-weight:400}
-/* 의안 목록 */
+/* 안건 목록 */
 .stages{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .stages button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 10px;font-size:13px}
 .stages button b{font-weight:600;margin-left:4px}
@@ -107,7 +107,7 @@ input.code{width:100%;text-align:center;font-size:30px;font-weight:600;letter-sp
 }
 .alert{border-color:var(--accent);margin-bottom:14px}
 .alert a{font-weight:600}
-/* 의안 상세 */
+/* 안건 상세 */
 .meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin:14px 0 0;padding:0}
 .meta div{margin:0}
 .meta dt{font-size:12px;color:var(--muted);font-weight:600}
@@ -134,7 +134,7 @@ input.code{width:100%;text-align:center;font-size:30px;font-weight:600;letter-sp
 .item-ed{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;position:relative}
 .x{border:0;background:transparent;color:var(--muted);font-size:18px;padding:2px 6px}
 .x:hover{color:var(--warn)}
-/* 표결: 투표 방식 실험실과 같은 고르기·결과 화면 */
+/* 투표: 투표 방식 실험실과 같은 고르기·결과 화면 */
 .cand{display:inline-flex;align-items:center;gap:5px;font-weight:600;white-space:nowrap}
 .order{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:14px}
 .order .gt{color:var(--muted)}
@@ -198,17 +198,17 @@ footer a{color:inherit}
 <footer>
   <p>&copy; 2026 <a href="https://hyunedulab.com/">현쌤의 에듀랩</a> · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ko" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a></p>
   <p><a href="https://hyunedulab.com/privacy/" target="_blank" rel="noopener">개인정보처리방침</a> · <a href="https://hyunedulab.com/terms/" target="_blank" rel="noopener">이용약관</a></p>
-  <p>학생 이름이나 연락처는 모으지 않아요. 의안에는 제안 단위와 직책만 남아요.</p>
+  <p>학생 이름이나 연락처는 모으지 않아요. 안건에는 학급(모둠)과 역할만 남아요.</p>
 </footer>
 
 <dialog id="keyDlg">
   <form id="keyForm" class="form">
     <h2 style="margin:0">권한 코드 넣기</h2>
-    <p class="sub" style="margin:0">제안 코드(학급·모둠 대표), 임원 코드, 관리 코드(선생님) 중 받은 코드를 넣어 주세요.</p>
+    <p class="sub" style="margin:0">받은 코드를 넣어 주세요. 학급(모둠) 대표는 제안 코드, 임원은 임원 코드, 선생님은 관리 코드예요.</p>
     <input class="code" id="keyInput" maxlength="6" autocomplete="off" aria-label="권한 코드">
     <p class="err" id="keyErr"></p>
     <div class="row">
-      <button type="button" class="btn small" id="keyView">열람으로 돌아가기</button>
+      <button type="button" class="btn small" id="keyView">보기만 하기</button>
       <span class="grow"></span>
       <button type="button" class="btn" id="keyCancel">닫기</button>
       <button class="btn primary">확인</button>
@@ -244,7 +244,7 @@ async function req(path, params, body) {
   catch (e) {
     if (e.status !== 401 || !CUR.code) throw e;
     await enter(CUR.code);
-    notice = '코드가 바뀌어 열람 권한으로 다시 들어왔어요. 권한이 필요하면 새 코드를 넣어 주세요.';
+    notice = '코드가 바뀌어 보기만 할 수 있게 다시 들어왔어요. 권한이 필요하면 새 코드를 넣어 주세요.';
     chrome(activeTab);
     return call(path, params, body, TOKENS[CUR.code]);
   }
@@ -276,15 +276,18 @@ const NEXT = {
   received: ['review', 'tabled', 'returned', 'withdrawn'], review: ['tabled', 'returned', 'withdrawn'],
   tabled: ['decided'], decided: ['proposed'], proposed: ['answered'], answered: ['done']
 };
-const RESULT = { passed: '가결', amended: '수정 가결', rejected: '부결' };
-const ROLE = { view: '열람', unit: '제안 단위', officer: '임원', admin: '선생님' };
+const RESULT = { passed: '통과', amended: '고쳐서 통과', rejected: '통과 못 함' };
+const ROLE = { view: '보기', unit: '학급 대표', officer: '임원', admin: '선생님' };
+const officerName = () => CUR.space.kind === 'class' ? '학급 임원' : '학생회 임원';
+const unitWord = () => CUR.space.kind === 'class' ? '모둠' : '학급';
+const canPropose = () => CUR.me.role === 'unit' || CUR.me.role === 'officer'; // 학급(모둠) 대표와 임원이 안건을 냄
 const school = () => CUR.space.kind === 'class' ? '선생님' : '학교';
-const stepName = s => ({ received: '접수', review: '심사', tabled: '상정', decided: '의결', proposed: school() + ' 건의', answered: school() + ' 답변', done: '이행 완료', withdrawn: '철회', returned: '반려' })[s];
+const stepName = s => ({ received: '제안', review: '검토', tabled: '회의에 올림', decided: '결정', proposed: school() + '에 전달', answered: school() + ' 답변', done: '실천 완료', withdrawn: '제안 취소', returned: '돌려보냄' })[s];
 const stageKey = b => b.stage === 'decided' && b.result === 'rejected' ? 'rejected' : b.stage;
 const KEYS = ['received', 'review', 'tabled', 'decided', 'rejected', 'proposed', 'answered', 'done', 'withdrawn', 'returned'];
-const keyName = k => k === 'rejected' ? '부결' : k === 'decided' ? '가결' : stepName(k);
+const keyName = k => k === 'rejected' ? '통과 못 함' : k === 'decided' ? '통과' : stepName(k);
 const isClosed = b => ['done', 'withdrawn', 'returned', 'rejected'].includes(stageKey(b));
-const billLabel = b => b.stage === 'decided' ? RESULT[b.result] || '의결' : stepName(b.stage);
+const billLabel = b => b.stage === 'decided' ? RESULT[b.result] || '결정' : stepName(b.stage);
 const chip = b => `<span class="chip${isClosed(b) ? '' : ' on'}">${esc(billLabel(b))}</span>`;
 const billNo = b => `${b.year}-${String(b.seq).padStart(3, '0')}`;
 const day = iso => iso ? new Date(new Date(iso).getTime() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '.') : '';
@@ -300,13 +303,13 @@ function chrome(active) {
   activeTab = active;
   const nav = $('#nav'), who = $('#who');
   if (!active || !CUR.space) { nav.hidden = true; who.innerHTML = ''; return }
-  const tabs = [['bills', '의안', C()], ['m', '회의록', C('/m')], ['v', '표결', C('/v')]];
+  const tabs = [['bills', '안건', C()], ['m', '회의록', C('/m')], ['v', '투표', C('/v')]];
   if (CUR.me.role === 'admin') tabs.push(['settings', '설정', C('/settings')]);
   nav.hidden = false;
   nav.innerHTML = `<span class="sname">${esc(CUR.space.name)}</span>` +
     tabs.map(([k, l, h]) => `<a href="${h}" ${active === k ? 'aria-current="page"' : ''}>${l}</a>`).join('');
   const me = CUR.me;
-  who.innerHTML = `<span class="chip on">${esc(me.role === 'unit' ? me.unit + ' 대표' : ROLE[me.role])}</span><button class="btn small" id="keyBtn">권한 코드</button>`;
+  who.innerHTML = `<span class="chip on">${esc(me.role === 'unit' ? me.unit + ' 대표' : me.role === 'officer' ? officerName() : ROLE[me.role])}</span><button class="btn small" id="keyBtn">권한 코드</button>`;
   $('#keyBtn').onclick = () => { $('#keyErr').textContent = ''; $('#keyInput').value = ''; $('#keyDlg').showModal() };
 }
 $('#keyForm').onsubmit = async e => {
@@ -348,7 +351,7 @@ function home() {
   const recent = Object.entries(RECENT);
   app.innerHTML = `<div class="narrow stack">
     <div><h1 class="h1">학생자치 의안정보시스템</h1>
-      <p class="lead">학급회의와 학생회에 낸 건의가 심의와 의결을 거쳐 학교의 답변과 이행까지 어떻게 처리되는지 한곳에 기록하고 함께 확인해요.</p></div>
+      <p class="lead">우리가 낸 안건이 회의와 투표를 거쳐 학교의 답변을 받고 실천되기까지, 어디쯤 왔는지 한곳에서 함께 확인해요.</p></div>
     <form class="card" id="enterForm">
       <h2>공간 들어가기</h2>
       <p class="sub">선생님이나 학생회에서 알려 준 공간 코드(영문·숫자 8자리)를 넣어 주세요.</p>
@@ -380,14 +383,14 @@ const DEFAULTS = {
 };
 function spaceFields(s) {
   return field('공간 이름', `<input name="name" maxlength="40" required value="${esc(s.name || '')}">`) +
-    field('심의 기구 이름', `<input name="body_name" maxlength="20" value="${esc(s.body_name || '')}">`, '회의록 이름에 쓰여요. 예: 대의원회, 학급회의') +
-    `<div class="f">제안 단위<div class="row gen" id="gen"></div>
+    field('회의 모임 이름', `<input name="body_name" maxlength="20" value="${esc(s.body_name || '')}">`, '회의록 이름에 쓰여요. 예: 대의원회, 학급회의') +
+    `<div class="f">안건을 내는 곳<div class="row gen" id="gen"></div>
       <textarea name="units" rows="6" required>${esc((s.units || []).join('\n'))}</textarea>
-      <small>한 줄에 하나씩. 학생회는 학급, 학급회의는 모둠이나 부서를 써요. 단위마다 제안 코드가 따로 생겨요.</small></div>` +
-    field('직책', `<input name="roles" maxlength="200" value="${esc((s.roles || []).join(', '))}">`, '쉼표로 나눠요. 의안을 낼 때 이 중에서 골라요.') +
+      <small>한 줄에 하나씩. 학생회는 학급, 학급회의는 모둠이나 부서를 써요. 줄마다 제안 코드가 따로 생겨요.</small></div>` +
+    field('역할', `<input name="roles" maxlength="200" value="${esc((s.roles || []).join(', '))}">`, '쉼표로 나눠요. 안건을 낼 때 이 중에서 골라요.') +
     `<div class="grid2">
-      ${field('재적 수', `<input name="enrolled" type="number" min="0" max="9999" inputmode="numeric" value="${s.enrolled || ''}">`, '표결에 참여할 수 있는 사람 수. 출석이 재적 과반인지 보여 줘요. 비워도 돼요.')}
-      ${field('가결 기준', `<select name="pass_rule"><option value="majority">출석 과반 찬성</option><option value="two_thirds" ${s.pass_rule === 'two_thirds' ? 'selected' : ''}>출석 3분의 2 찬성</option></select>`)}
+      ${field('전체 인원', `<input name="enrolled" type="number" min="0" max="9999" inputmode="numeric" value="${s.enrolled || ''}">`, '투표할 수 있는 사람 수예요. 참석자가 절반을 넘는지 보여 줘요. 비워도 돼요.')}
+      ${field('통과 기준', `<select name="pass_rule"><option value="majority">참석자 절반보다 많이 찬성</option><option value="two_thirds" ${s.pass_rule === 'two_thirds' ? 'selected' : ''}>참석자 3분의 2 이상 찬성</option></select>`)}
     </div>`;
 }
 const spaceBody = f => ({
@@ -445,16 +448,16 @@ async function settingsPage() {
   const K = d.codes, S = d.space;
   const link = location.origin + location.pathname + '#/' + K.code;
   const rows = [
-    ['space', '공간 코드', '모든 학생·선생님 (보기)', K.code],
+    ['space', '공간 코드', '모든 학생·선생님 (안건 보기)', K.code],
     ['admin', '관리 코드', '선생님 (설정, ' + school() + ' 답변)', K.admin_code],
-    ['officer', '임원 코드', '의장단·임원 (단계 바꾸기, 회의록, 표결 진행)', K.officer_code],
-    ...K.units.map(u => ['unit:' + u.name, u.name + ' 제안 코드', u.name + ' 대표 (의안 접수, 표결 참여)', u.code])
+    ['officer', '임원 코드', officerName() + ' (안건 내기, 다음 단계로 넘기기, 회의록, 투표 진행)', K.officer_code],
+    ...K.units.map(u => ['unit:' + u.name, u.name + ' 제안 코드', u.name + ' 대표 (안건 내기, 투표하기)', u.code])
   ];
   app.innerHTML = `
     ${justCreated ? `<div class="note done noprint"><b>공간을 만들었어요</b>아래 코드표를 인쇄해 나눠 주세요. 코드는 이 화면에서 언제든 다시 볼 수 있어요.</div>` : ''}
     <section class="card">
       <div class="row"><h1 class="h1 grow">${esc(S.name)} 코드표</h1><button class="btn noprint" id="printBtn">인쇄</button></div>
-      <p class="sub" style="margin-top:6px">주소: <span class="mono">${esc(link)}</span> · 공간 코드를 넣으면 누구나 의안을 볼 수 있고, 권한 코드를 더 넣으면 그 일을 할 수 있어요.</p>
+      <p class="sub" style="margin-top:6px">주소: <span class="mono">${esc(link)}</span> · 공간 코드를 넣으면 누구나 안건을 볼 수 있고, 권한 코드를 더 넣으면 그 일을 할 수 있어요.</p>
       <table class="tbl"><thead><tr><th>구분</th><th>누가 쓰나요</th><th>코드</th><th class="noprint"></th></tr></thead><tbody>
       ${rows.map(([k, a, b, c]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td><td class="big mono">${esc(c)}</td>
         <td class="noprint"><button class="btn small" data-regen="${esc(k)}">새로 만들기</button></td></tr>`).join('')}
@@ -464,7 +467,7 @@ async function settingsPage() {
     <form class="card form noprint" id="sf" style="margin-top:16px"><h2>설정</h2>${spaceFields(S)}
       <div class="row"><button class="btn primary">설정 저장</button><span class="sub" id="sfMsg" style="margin:0"></span></div><p class="err" id="sfErr"></p></form>
     <form class="card form noprint" id="df" style="margin-top:16px"><h2>공간 지우기</h2>
-      <p class="sub" style="margin:0">의안, 회의록, 표결이 모두 지워지고 되돌릴 수 없어요. 확인을 위해 공간 이름을 똑같이 써 주세요.</p>
+      <p class="sub" style="margin:0">안건, 회의록, 투표가 모두 지워지고 되돌릴 수 없어요. 확인을 위해 공간 이름을 똑같이 써 주세요.</p>
       <input name="confirm" class="f" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);font-size:16px" aria-label="공간 이름 확인">
       <div class="row"><button class="btn danger">공간 지우기</button></div><p class="err" id="dfErr"></p></form>`;
   justCreated = false;
@@ -496,7 +499,7 @@ async function settingsPage() {
   };
 }
 
-/* ── 의안 목록 ── */
+/* ── 안건 목록 ── */
 const F = { tab: 'pending', q: '', cat: '', unit: '', year: '', stage: '' };
 async function listPage() {
   const d = await req('bills');
@@ -504,14 +507,14 @@ async function listPage() {
   const years = [...new Set(bills.map(b => b.year))].sort((a, b) => b - a);
   const opt = (v, label, cur) => `<option value="${esc(v)}" ${String(cur) === String(v) ? 'selected' : ''}>${esc(label)}</option>`;
   app.innerHTML = `
-    ${d.openVotes.length && me.role !== 'view' ? `<div class="card alert"><b>진행 중인 표결</b> ${d.openVotes.map(v => `<a href="${C('/v/' + v.id)}">${esc(v.title)}</a>`).join(' · ')}</div>` : ''}
-    <div class="row head"><h1 class="h1 grow">의안 목록</h1>${me.role === 'unit' ? `<a class="btn primary" href="${C('/propose')}">의안 접수</a>` : ''}</div>
+    ${d.openVotes.length && me.role !== 'view' ? `<div class="card alert"><b>진행 중인 투표</b> ${d.openVotes.map(v => `<a href="${C('/v/' + v.id)}">${esc(v.title)}</a>`).join(' · ')}</div>` : ''}
+    <div class="row head"><h1 class="h1 grow">안건 목록</h1>${canPropose() ? `<a class="btn primary" href="${C('/propose')}">안건 내기</a>` : ''}</div>
     <div class="stages" id="stages"></div>
     <div class="filters">
-      <div class="seg" id="tabs">${[['pending', '계류 의안'], ['closed', '처리 의안'], ['all', '전체']].map(([k, l]) => `<button data-tab="${k}">${l}</button>`).join('')}</div>
+      <div class="seg" id="tabs">${[['pending', '진행 중'], ['closed', '끝난 안건'], ['all', '전체']].map(([k, l]) => `<button data-tab="${k}">${l}</button>`).join('')}</div>
       <input type="search" id="fq" placeholder="제목·내용 검색" value="${esc(F.q)}" aria-label="검색">
       <select id="fcat" aria-label="분류">${opt('', '모든 분류', F.cat)}${CATEGORIES.map(c => opt(c, c, F.cat)).join('')}</select>
-      <select id="funit" aria-label="제안 단위">${opt('', '모든 제안 단위', F.unit)}${CUR.space.units.map(u => opt(u, u, F.unit)).join('')}</select>
+      <select id="funit" aria-label="${unitWord()}">${opt('', '모든 ' + unitWord(), F.unit)}${[...CUR.space.units, officerName()].map(u => opt(u, u, F.unit)).join('')}</select>
       <select id="fyear" aria-label="학년도">${opt('', '모든 학년도', F.year)}${years.map(y => opt(y, y + '학년도', F.year)).join('')}</select>
     </div>
     <div id="rows"></div>`;
@@ -526,10 +529,10 @@ async function listPage() {
     $('#tabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', !F.stage && b.dataset.tab === F.tab));
     const shown = base.filter(b => F.stage ? stageKey(b) === F.stage : F.tab === 'all' || (F.tab === 'closed') === isClosed(b));
     $('#rows').innerHTML = shown.length
-      ? `<div class="blist" role="table"><div class="bl-h" role="row"><span>의안번호</span><span>제목</span><span>제안</span><span>제안일</span><span>상태</span></div>
+      ? `<div class="blist" role="table"><div class="bl-h" role="row"><span>안건 번호</span><span>제목</span><span>낸 곳</span><span>낸 날</span><span>상태</span></div>
         ${shown.map(b => `<a class="bl-r" role="row" href="${C('/b/' + b.id)}"><span class="mono">${billNo(b)}</span>
           <span class="t">${esc(b.title)}<small>${esc(b.category)}</small></span><span>${esc(b.unit)} · ${esc(b.role)}</span><span>${day(b.created_at)}</span><span>${chip(b)}</span></a>`).join('')}</div>`
-      : `<div class="card empty">${bills.length ? '조건에 맞는 의안이 없어요.' : '아직 접수된 의안이 없어요.' + (me.role === 'unit' ? ' 위의 \'의안 접수\'로 첫 의안을 내 보세요.' : '')}</div>`;
+      : `<div class="card empty">${bills.length ? '조건에 맞는 안건이 없어요.' : '아직 제안된 안건이 없어요.' + (canPropose() ? ' 위의 \'안건 내기\'로 첫 안건을 내 보세요.' : '')}</div>`;
   };
   $('#stages').onclick = e => { const b = e.target.closest('[data-stage]'); if (b) { F.stage = b.dataset.stage; draw() } };
   $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { F.tab = b.dataset.tab; F.stage = ''; draw() } };
@@ -538,21 +541,22 @@ async function listPage() {
   draw();
 }
 
-/* ── 의안 접수 ── */
+/* ── 안건 내기 ── */
 function billForm() {
   const me = CUR.me;
-  if (me.role !== 'unit') { app.innerHTML = card('의안은 제안 코드로 낼 수 있어요', '위의 \'권한 코드\'에 학급(모둠) 제안 코드를 넣어 주세요.'); return }
-  app.innerHTML = `<a class="back" href="${C()}">← 의안 목록</a>
+  if (!canPropose()) { app.innerHTML = card('안건은 제안 코드나 임원 코드로 낼 수 있어요', '위의 \'권한 코드\'에 학급(모둠) 제안 코드나 임원 코드를 넣어 주세요.'); return }
+  const from = me.role === 'officer' ? officerName() : me.unit;
+  app.innerHTML = `<a class="back" href="${C()}">← 안건 목록</a>
   <form class="card narrow form" id="bf">
-    <div><h1 class="h1">의안 접수</h1><p class="sub" style="margin:6px 0 0">이름은 쓰지 마세요. 의안에는 <b>${esc(me.unit)}</b>과 고른 직책만 남아요.</p></div>
+    <div><h1 class="h1">안건 내기</h1><p class="sub" style="margin:6px 0 0">이름은 쓰지 마세요. 안건에는 <b>${esc(from)}</b> 이름과 고른 역할만 남아요.</p></div>
     <div class="grid2">
-      ${field('직책', `<select name="role" required>${CUR.space.roles.map(r => `<option>${esc(r)}</option>`).join('')}</select>`)}
+      ${field('내 역할', `<select name="role" required>${CUR.space.roles.map(r => `<option>${esc(r)}</option>`).join('')}</select>`)}
       ${field('분류', `<select name="category">${CATEGORIES.map(c => `<option>${esc(c)}</option>`).join('')}</select>`)}
     </div>
-    ${field('제목', '<input name="title" maxlength="80" required>', '무엇을 바라는지 한 줄로. 예: 2층 복도에 정수기를 설치해 주세요')}
-    ${field('제안 이유', '<textarea name="reason" rows="4" maxlength="1000" required></textarea>', '왜 필요한지, 지금 어떤 점이 불편한지')}
-    ${field('주요 내용', '<textarea name="content" rows="6" maxlength="2000" required></textarea>', '구체적으로 무엇을, 어디에, 어떻게 했으면 하는지')}
-    <div class="row"><button class="btn primary lg">접수하기</button></div><p class="err" id="bfErr"></p>
+    ${field('제목', '<input name="title" maxlength="80" required>', '바라는 것을 한 줄로 써요. 예: 2층 복도에 정수기를 설치해 주세요')}
+    ${field('왜 필요한가요?', '<textarea name="reason" rows="4" maxlength="1000" required></textarea>', '지금 어떤 점이 불편하거나 아쉬운지 써요')}
+    ${field('무엇을 바라나요?', '<textarea name="content" rows="6" maxlength="2000" required></textarea>', '무엇을, 어디에, 어떻게 바꾸면 좋을지 자세히 써요')}
+    <div class="row"><button class="btn primary lg">안건 내기</button></div><p class="err" id="bfErr"></p>
   </form>`;
   $('#bf').onsubmit = async e => {
     e.preventDefault();
@@ -564,7 +568,7 @@ function billForm() {
   };
 }
 
-/* ── 의안 상세 ── */
+/* ── 안건 자세히 ── */
 function allowedNext(b, me) {
   return (NEXT[b.stage] || []).filter(to => {
     if (to === 'proposed' && b.result === 'rejected') return false;
@@ -577,17 +581,17 @@ async function billPage(id) {
   const d = await req('bills', { id });
   const b = d.bill, me = CUR.me;
   const cur = STEPS.indexOf(b.stage);
-  const ended = { withdrawn: '이 의안은 철회되었어요.', returned: '이 의안은 반려되었어요.' }[b.stage] || (b.result === 'rejected' ? '이 의안은 부결되었어요.' : '');
+  const ended = { withdrawn: '이 안건은 제안이 취소되었어요.', returned: '이 안건은 돌려보냈어요. 아래 진행 기록에서 까닭을 볼 수 있어요.' }[b.stage] || (b.result === 'rejected' ? '이 안건은 투표에서 통과하지 못했어요.' : '');
   const next = allowedNext(b, me);
   const canVote = (me.role === 'officer' || me.role === 'admin') && ['received', 'review', 'tabled'].includes(b.stage);
   const hasCounts = b.yes_count != null || b.no_count != null;
-  app.innerHTML = `<a class="back" href="${C()}">← 의안 목록</a>
+  app.innerHTML = `<a class="back" href="${C()}">← 안건 목록</a>
     <section class="card">
-      <p class="sub mono" style="margin:0">의안번호 ${billNo(b)}</p>
+      <p class="sub mono" style="margin:0">안건 번호 ${billNo(b)}</p>
       <h1 class="h1">${esc(b.title)}</h1>
       <dl class="meta">
-        <div><dt>제안</dt><dd>${esc(b.unit)} · ${esc(b.role)}</dd></div>
-        <div><dt>제안일</dt><dd>${day(b.created_at)}</dd></div>
+        <div><dt>낸 곳</dt><dd>${esc(b.unit)} · ${esc(b.role)}</dd></div>
+        <div><dt>낸 날</dt><dd>${day(b.created_at)}</dd></div>
         <div><dt>분류</dt><dd>${esc(b.category)}</dd></div>
         <div><dt>상태</dt><dd>${chip(b)}</dd></div>
       </dl>
@@ -596,24 +600,24 @@ async function billPage(id) {
     </section>
     <div class="cols2">
       <div class="stack">
-        <section class="card"><h2>제안 이유</h2><p class="pre">${esc(b.reason)}</p><h2>주요 내용</h2><p class="pre" style="margin:0">${esc(b.content)}</p></section>
-        ${b.result ? `<section class="card"><h2>의결 결과: ${esc(RESULT[b.result])}</h2>${hasCounts ? `<div class="counts"><span>찬성<b>${b.yes_count ?? '-'}</b></span><span>반대<b>${b.no_count ?? '-'}</b></span><span>기권<b>${b.abstain_count ?? '-'}</b></span></div>` : ''}</section>` : ''}
+        <section class="card"><h2>왜 필요한가요?</h2><p class="pre">${esc(b.reason)}</p><h2>무엇을 바라나요?</h2><p class="pre" style="margin:0">${esc(b.content)}</p></section>
+        ${b.result ? `<section class="card"><h2>결정: ${esc(RESULT[b.result])}</h2>${hasCounts ? `<div class="counts"><span>찬성<b>${b.yes_count ?? '-'}</b></span><span>반대<b>${b.no_count ?? '-'}</b></span><span>기권<b>${b.abstain_count ?? '-'}</b></span></div>` : ''}</section>` : ''}
         ${b.reply ? `<section class="card"><h2>${school()} 답변</h2><p class="pre" style="margin:0">${esc(b.reply)}</p></section>` : ''}
-        <section class="card"><h2>처리 경과</h2>
-          <table class="tbl"><thead><tr><th>날짜</th><th>단계</th><th>내용</th><th>처리</th></tr></thead><tbody>
-          ${d.events.map(ev => `<tr><td>${day(ev.at)}</td><td>${esc(stepName(ev.stage))}</td><td>${esc(ev.note)}</td><td>${esc(ROLE[ev.by_role] || '')}</td></tr>`).join('')}
+        <section class="card"><h2>진행 기록</h2>
+          <table class="tbl"><thead><tr><th>날짜</th><th>단계</th><th>내용</th><th>누가</th></tr></thead><tbody>
+          ${d.events.map(ev => `<tr><td>${day(ev.at)}</td><td>${esc(stepName(ev.stage))}</td><td>${esc(ev.note)}</td><td>${esc(ev.by_role === 'officer' ? officerName() : ROLE[ev.by_role] || '')}</td></tr>`).join('')}
           </tbody></table></section>
       </div>
       <div class="stack">
-        ${next.length ? `<form class="card form" id="af"><h2>처리하기</h2>
-          ${field('다음 단계', `<select name="to">${next.map(t => `<option value="${t}">${esc(stepName(t))}</option>`).join('')}</select>`)}
+        ${next.length ? `<form class="card form" id="af"><h2>다음 단계로</h2>
+          ${field('어느 단계로', `<select name="to">${next.map(t => `<option value="${t}">${esc(stepName(t))}</option>`).join('')}</select>`)}
           <div id="extra" class="form"></div>
-          ${field('메모', '<input name="note" maxlength="500">', '처리 경과에 남아요')}
+          ${field('메모', '<input name="note" maxlength="500">', '진행 기록에 남아요')}
           <div class="row"><button class="btn primary">기록하기</button></div><p class="err" id="afErr"></p></form>` : ''}
-        ${canVote ? `<div class="card"><h2>찬반 표결</h2><p class="sub">${esc(CUR.space.body_name)}에서 이 의안을 표결해요. 결과는 의안의 의결 결과로 옮길 수 있어요.</p>
-          <button class="btn primary" id="voteBtn">표결 시작</button><p class="err" id="voteErr"></p></div>` : ''}
+        ${canVote ? `<div class="card"><h2>찬반 투표</h2><p class="sub">${esc(CUR.space.body_name)}에서 이 안건에 찬성·반대·기권으로 투표해요. 끝나면 결과를 안건에 넣을 수 있어요.</p>
+          <button class="btn primary" id="voteBtn">투표 시작</button><p class="err" id="voteErr"></p></div>` : ''}
         <div class="card"><h2>관련 회의록</h2>${d.meetings.length ? `<ul class="plain">${d.meetings.map(m => `<li><a href="${C('/m/' + m.id)}">${esc(m.title)}</a> <span class="sub">${esc(m.held_on.replace(/-/g, '.'))}</span></li>`).join('')}</ul>` : '<p class="sub" style="margin:0">아직 없어요.</p>'}</div>
-        <div class="card"><h2>표결</h2>${d.votes.length ? `<ul class="plain">${d.votes.map(v => `<li><a href="${C('/v/' + v.id)}">${esc(v.title)}</a> <span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : '마감'}</span></li>`).join('')}</ul>` : '<p class="sub" style="margin:0">아직 없어요.</p>'}</div>
+        <div class="card"><h2>투표</h2>${d.votes.length ? `<ul class="plain">${d.votes.map(v => `<li><a href="${C('/v/' + v.id)}">${esc(v.title)}</a> <span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : '마감'}</span></li>`).join('')}</ul>` : '<p class="sub" style="margin:0">아직 없어요.</p>'}</div>
       </div>
     </div>`;
   if (next.length) {
@@ -621,10 +625,10 @@ async function billPage(id) {
     const extra = () => {
       const to = f.to.value;
       $('#extra').innerHTML = to === 'decided'
-        ? `<div class="f">의결 결과<div class="radios">${Object.entries(RESULT).map(([k, l], i) => `<label><input type="radio" name="result" value="${k}" ${i ? '' : 'checked'}> ${l}</label>`).join('')}</div></div>
+        ? `<div class="f">결정<div class="radios">${Object.entries(RESULT).map(([k, l], i) => `<label><input type="radio" name="result" value="${k}" ${i ? '' : 'checked'}> ${l}</label>`).join('')}</div></div>
            <div class="grid2" style="grid-template-columns:repeat(3,1fr)">${field('찬성', '<input name="yes" type="number" min="0" inputmode="numeric">')}${field('반대', '<input name="no" type="number" min="0" inputmode="numeric">')}${field('기권', '<input name="abstain" type="number" min="0" inputmode="numeric">')}</div>`
         : to === 'answered' ? field(school() + ' 답변', '<textarea name="reply" rows="5" maxlength="1000" required></textarea>')
-        : to === 'returned' ? '<p class="sub" style="margin:0">반려 이유를 메모에 꼭 적어 주세요. (예: 같은 내용의 의안이 이미 있어요)</p>' : '';
+        : to === 'returned' ? '<p class="sub" style="margin:0">돌려보내는 까닭을 메모에 꼭 적어 주세요. (예: 같은 내용의 안건이 이미 있어요)</p>' : '';
     };
     f.to.onchange = extra; extra();
     f.onsubmit = async e => {
@@ -632,7 +636,7 @@ async function billPage(id) {
       const body = { action: 'advance', id: b.id, to: f.to.value, note: f.note.value };
       if (body.to === 'decided') Object.assign(body, { result: f.result.value, yes: f.yes.value, no: f.no.value, abstain: f.abstain.value });
       if (body.to === 'answered') body.reply = f.reply.value;
-      if (body.to === 'withdrawn' && !confirm('이 의안을 철회할까요? 되돌릴 수 없어요.')) return;
+      if (body.to === 'withdrawn' && !confirm('이 안건의 제안을 취소할까요? 되돌릴 수 없어요.')) return;
       try { await req('bills', null, body); route() } catch (err) { $('#afErr').textContent = err.message }
     };
   }
@@ -648,7 +652,7 @@ async function meetingsPage() {
   const officer = CUR.me.role === 'officer' || CUR.me.role === 'admin';
   app.innerHTML = `<div class="row head"><h1 class="h1 grow">회의록</h1>${officer ? `<a class="btn primary" href="${C('/m/new')}">회의록 쓰기</a>` : ''}</div>
     ${d.meetings.length ? `<div class="blist">${d.meetings.map(m => `<a class="bl-r" style="grid-template-columns:minmax(0,1fr) auto auto" href="${C('/m/' + m.id)}">
-      <span class="t">${esc(m.title)}<small>의안 ${m.items.length}건${m.enrolled ? ` · 재적 ${m.enrolled}명 중 ${m.present}명 출석` : ''}</small></span><span></span><span>${esc(m.held_on.replace(/-/g, '.'))}</span></a>`).join('')}</div>`
+      <span class="t">${esc(m.title)}<small>안건 ${m.items.length}건${m.enrolled ? ` · 전체 ${m.enrolled}명 중 ${m.present}명 참석` : ''}</small></span><span></span><span>${esc(m.held_on.replace(/-/g, '.'))}</span></a>`).join('')}</div>`
       : `<div class="card empty">아직 회의록이 없어요.</div>`}`;
 }
 async function meetingPage(id) {
@@ -661,22 +665,22 @@ async function meetingPage(id) {
       <div class="row"><h1 class="h1 grow">${esc(m.title)} 회의록</h1><span class="row noprint"><button class="btn small" id="mPrint">인쇄</button>
         ${officer ? `<a class="btn small" href="${C('/m/' + m.id + '/edit')}">고치기</a><button class="btn small danger" id="mDel">지우기</button>` : ''}</span></div>
       <dl class="meta"><div><dt>날짜</dt><dd>${esc(m.held_on.replace(/-/g, '.'))}</dd></div>
-        <div><dt>출석</dt><dd>${m.enrolled ? `재적 ${m.enrolled}명 중 ${m.present}명` : m.present ? m.present + '명' : '-'}</dd></div></dl>
+        <div><dt>참석</dt><dd>${m.enrolled ? `전체 ${m.enrolled}명 중 ${m.present}명` : m.present ? m.present + '명' : '-'}</dd></div></dl>
     </section>
     <section class="card" style="margin-top:16px"><h2>안건</h2>
       ${m.items.length ? m.items.map((it, i) => { const b = byId[it.bill_id]; return `<div class="item">
-        <p style="margin:0 0 4px"><b>${i + 1}.</b> ${b ? `<a href="${C('/b/' + b.id)}">${billNo(b)} ${esc(b.title)}</a> ${chip(b)}` : '(지워진 의안)'}</p>
-        ${it.summary ? `<p class="pre" style="margin:0 0 4px">${esc(it.summary)}</p>` : ''}${it.result ? `<p class="sub" style="margin:0">결과: ${esc(it.result)}</p>` : ''}</div>` }).join('') : '<p class="sub" style="margin:0">올린 의안이 없어요.</p>'}
+        <p style="margin:0 0 4px"><b>${i + 1}.</b> ${b ? `<a href="${C('/b/' + b.id)}">${billNo(b)} ${esc(b.title)}</a> ${chip(b)}` : '(지워진 안건)'}</p>
+        ${it.summary ? `<p class="pre" style="margin:0 0 4px">${esc(it.summary)}</p>` : ''}${it.result ? `<p class="sub" style="margin:0">결과: ${esc(it.result)}</p>` : ''}</div>` }).join('') : '<p class="sub" style="margin:0">올린 안건이 없어요.</p>'}
     </section>
     ${m.notes ? `<section class="card" style="margin-top:16px"><h2>기타 기록</h2><p class="pre" style="margin:0">${esc(m.notes)}</p></section>` : ''}`;
   $('#mPrint').onclick = () => window.print();
   if (officer) $('#mDel').onclick = async () => {
-    if (!confirm('이 회의록을 지울까요? 의안의 처리 경과는 그대로 남아요.')) return;
+    if (!confirm('이 회의록을 지울까요? 안건의 진행 기록은 그대로 남아요.')) return;
     await req('meetings', null, { action: 'remove', id: m.id }); location.hash = C('/m');
   };
 }
 async function meetingEdit(id) {
-  if (CUR.me.role !== 'officer' && CUR.me.role !== 'admin') { app.innerHTML = card('회의록은 임원이 써요', '임원 코드로 들어와 주세요.'); return }
+  if (CUR.me.role !== 'officer' && CUR.me.role !== 'admin') { app.innerHTML = card('회의록은 임원이 써요', '위의 \'권한 코드\'에 임원 코드를 넣어 주세요.'); return }
   const [{ bills }, mine] = await Promise.all([req('bills'), id ? req('meetings', { id }) : req('meetings')]);
   const m = id ? mine.meeting : { title: `제${mine.meetings.length + 1}차 ${CUR.space.body_name}`, held_on: today(), present: '', enrolled: CUR.space.enrolled || '', items: [], notes: '' };
   const items = m.items.map(i => Object.assign({}, i));
@@ -686,24 +690,24 @@ async function meetingEdit(id) {
       ${field('회의 이름', `<input name="title" maxlength="60" required value="${esc(m.title)}">`)}
       <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
         ${field('날짜', `<input name="held_on" type="date" required value="${esc(m.held_on)}">`)}
-        ${field('출석', `<input name="present" type="number" min="0" inputmode="numeric" value="${esc(m.present)}">`)}
-        ${field('재적', `<input name="enrolled" type="number" min="0" inputmode="numeric" value="${esc(m.enrolled)}">`)}
+        ${field('참석', `<input name="present" type="number" min="0" inputmode="numeric" value="${esc(m.present)}">`)}
+        ${field('전체 인원', `<input name="enrolled" type="number" min="0" inputmode="numeric" value="${esc(m.enrolled)}">`)}
       </div>
-      <div class="note" style="margin:0"><b>자동으로 채우기</b>이 날짜에 한 표결 결과, 상정된 의안, 표결 참여 인원으로 초안을 채워요. 이미 쓴 내용은 그대로 두고 빈 곳만 채워요.
+      <div class="note" style="margin:0"><b>자동으로 채우기</b>이 날짜에 한 투표 결과, 회의에 올린 안건, 투표한 사람 수로 초안을 채워요. 이미 쓴 내용은 그대로 두고 빈 곳만 채워요.
         <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="autoBtn">기록으로 채우기</button><span class="sub" id="autoMsg" style="margin:0"></span></div></div>
-      <div class="f">안건<small>계류 중인 의안을 올려요. 처음 올린 의안은 처리 경과에 기록되고, 접수·심사 단계였다면 '상정'으로 바뀌어요.</small></div>
+      <div class="f">안건<small>진행 중인 안건을 올려요. 처음 올린 안건은 진행 기록에 남고, 제안·검토 단계였다면 '회의에 올림'으로 바뀌어요.</small></div>
       <div id="items" class="stack" style="gap:10px"></div>
-      <div><button type="button" class="btn small" id="addItem" ${choosable.length ? '' : 'disabled'}>+ 의안 추가</button></div>
-      ${field('기타 기록', `<textarea name="notes" rows="4" maxlength="3000">${esc(m.notes)}</textarea>`, '건의 사항, 다음 회의 일정 등')}
+      <div><button type="button" class="btn small" id="addItem" ${choosable.length ? '' : 'disabled'}>+ 안건 추가</button></div>
+      ${field('기타 기록', `<textarea name="notes" rows="4" maxlength="3000">${esc(m.notes)}</textarea>`, '그 밖에 나온 이야기, 다음 회의 날짜 등')}
       <div class="row"><button class="btn primary lg">저장</button></div><p class="err" id="mfErr"></p>
     </form>`;
   const drawItems = () => {
     $('#items').innerHTML = items.map((it, i) => `<div class="item-ed">
       <button type="button" class="x" data-del="${i}" aria-label="안건 빼기" style="position:absolute;top:6px;right:6px">×</button>
-      <select data-k="bill_id" data-i="${i}" aria-label="의안" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);margin-right:28px">
+      <select data-k="bill_id" data-i="${i}" aria-label="안건" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel);margin-right:28px">
         ${choosable.map(b => `<option value="${b.id}" ${b.id === it.bill_id ? 'selected' : ''}>${billNo(b)} ${esc(b.title)}</option>`).join('')}</select>
-      <textarea data-k="summary" data-i="${i}" rows="3" maxlength="1000" placeholder="논의 요지" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)">${esc(it.summary)}</textarea>
-      <input data-k="result" data-i="${i}" maxlength="100" placeholder="결과 (예: 다음 회의에서 표결)" value="${esc(it.result)}" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)">
+      <textarea data-k="summary" data-i="${i}" rows="3" maxlength="1000" placeholder="나온 의견" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)">${esc(it.summary)}</textarea>
+      <input data-k="result" data-i="${i}" maxlength="100" placeholder="결과 (예: 다음 회의에서 투표)" value="${esc(it.result)}" style="padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;background:var(--panel)">
     </div>`).join('');
   };
   $('#items').oninput = $('#items').onchange = e => { const t = e.target; if (t.dataset.k) items[+t.dataset.i][t.dataset.k] = t.value };
@@ -718,7 +722,7 @@ async function meetingEdit(id) {
     try {
       const r = await autofill($('#mf'), items, choosable, bills);
       drawItems(); $('#addItem').disabled = !choosable.length;
-      $('#autoMsg').textContent = r.bills || r.votes ? `의안 ${r.bills}건, 표결 ${r.votes}건을 불러왔어요. 논의 내용을 덧붙여 주세요.` : '이 날짜에 상정된 의안이나 표결이 없어요.';
+      $('#autoMsg').textContent = r.bills || r.votes ? `안건 ${r.bills}건, 투표 ${r.votes}건을 불러왔어요. 나온 의견을 덧붙여 주세요.` : '이 날짜에 회의에 올린 안건이나 투표가 없어요.';
     } catch (err) { $('#autoMsg').textContent = err.message }
   };
   $('#autoBtn').onclick = auto;
@@ -732,7 +736,7 @@ async function meetingEdit(id) {
     } catch (err) { $('#mfErr').textContent = err.message }
   };
 }
-// 회의록 초안: 그 날짜의 표결 결과, 상정·의결된 의안, 표결 참여 인원(출석 추정)을 빈 칸에만 채움
+// 회의록 초안: 그 날짜의 투표 결과, 상정·의결된 안건, 투표 참여 인원(출석 추정)을 빈 칸에만 채움
 async function autofill(f, items, choosable, bills) {
   const date = f.held_on.value;
   const onDay = iso => iso && day(iso) === date.replace(/-/g, '.');
@@ -740,9 +744,9 @@ async function autofill(f, items, choosable, bills) {
   const details = await Promise.all(votes.filter(v => onDay(v.created_at)).map(v => req('votes', { id: v.id })));
   const resultText = d => {
     const v = d.vote, r = d.result;
-    if (v.kind === 'yesno') return v.open || !r ? `찬반 표결 진행 중 (${d.count}명 참여)` : `찬반 표결 ${r.passed ? '가결' : '부결'} (찬성 ${r.yes}, 반대 ${r.no}, 기권 ${r.abstain})`;
+    if (v.kind === 'yesno') return v.open || !r ? `찬반 투표 진행 중 (${d.count}명 참여)` : `찬반 투표 ${r.passed ? '통과' : '통과 못 함'} (찬성 ${r.yes}, 반대 ${r.no}, 기권 ${r.abstain})`;
     const w = d.groups && d.groups.length ? winnersOf(v.options, d.groups, v.method) : null;
-    return `${METHODS[v.method].name} 선택 표결${w ? ': ' + (w.length ? w.map(i => v.options[i]).join(', ') + (w.length > 1 ? ' 동점' : '') : '1등 없음') : ''} (${d.count}명 참여)`;
+    return `고르기 투표(${METHODS[v.method].name})${w ? ': ' + (w.length ? w.map(i => v.options[i]).join(', ') + (w.length > 1 ? ' 동점' : '') : '1등 없음') : ''} (${d.count}명 참여)`;
   };
   const byBill = {};
   details.forEach(d => { if (d.vote.bill_id) (byBill[d.vote.bill_id] = byBill[d.vote.bill_id] || []).push(resultText(d)) });
@@ -752,15 +756,15 @@ async function autofill(f, items, choosable, bills) {
     let it = items.find(i => i.bill_id === b.id);
     if (!it) items.push(it = { bill_id: b.id, summary: '', result: '' });
     if (!it.summary) it.summary = `제안 설명(${b.unit} ${b.role}): ${b.reason}`.slice(0, 1000);
-    if (!it.result) it.result = ((byBill[b.id] || []).join(' / ') || (b.stage === 'decided' ? '의결: ' + RESULT[b.result] : '계속 논의')).slice(0, 100);
+    if (!it.result) it.result = ((byBill[b.id] || []).join(' / ') || (b.stage === 'decided' ? '결정: ' + RESULT[b.result] : '다음에 계속 이야기')).slice(0, 100);
   }
   if (!f.present.value) { const mx = Math.max(0, ...details.map(d => d.count)); if (mx) f.present.value = mx }
   const free = details.filter(d => !d.vote.bill_id).map(d => `- ${d.vote.title}: ${resultText(d)}`).filter(t => !f.notes.value.includes(t));
-  if (free.length) f.notes.value = (f.notes.value ? f.notes.value + '\n' : '') + '선택 표결\n' + free.join('\n');
+  if (free.length) f.notes.value = (f.notes.value ? f.notes.value + '\n' : '') + '고르기 투표\n' + free.join('\n');
   return { bills: wanted.length, votes: details.length };
 }
 
-/* ── 표결: 투표 방식 실험실(voting_lab)의 집계·고르기·결과 코드를 그대로 가져옴 ── */
+/* ── 투표: 투표 방식 실험실(voting_lab)의 집계·고르기·결과 코드를 그대로 가져옴 ── */
 function best(scores, among) {
   let top = -Infinity, w = [];
   among.forEach(i => { if (scores[i] > top) { top = scores[i]; w = [i] } else if (scores[i] === top) w.push(i) });
@@ -888,31 +892,31 @@ function bigResult(el, st) {
 
 let voter = load('bills-voter', '');
 if (!/^[a-z0-9]{8,40}$/.test(voter)) { voter = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()) + Date.now()).replace(/[^a-z0-9]/g, '').slice(0, 32); save('bills-voter', voter) }
-const myVotes = load('bills-myvotes', {});   // 표결 id → 내가 고른 것 (내 화면에 보여 주기용)
+const myVotes = load('bills-myvotes', {});   // 투표 id → 내가 고른 것 (내 화면에 보여 주기용)
 const isOfficer = () => CUR.me.role === 'officer' || CUR.me.role === 'admin';
-const voteKind = v => v.kind === 'yesno' ? '찬반 표결' : '선택 표결 · ' + METHODS[v.method].name;
+const voteKind = v => v.kind === 'yesno' ? '찬반 투표' : '고르기 투표 · ' + METHODS[v.method].name;
 
 async function votesPage() {
   const [{ votes }, billsRes] = await Promise.all([req('votes'), isOfficer() ? req('bills') : null]);
-  app.innerHTML = `<h1 class="h1" style="margin-bottom:14px">표결</h1>
+  app.innerHTML = `<h1 class="h1" style="margin-bottom:14px">투표</h1>
     <div class="cols2" style="margin-top:0">
       <div>${votes.length ? `<div class="blist">${votes.map(v => `<a class="bl-r" style="grid-template-columns:minmax(0,1fr) auto auto" href="${C('/v/' + v.id)}">
         <span class="t">${esc(v.title)}<small>${esc(voteKind(v))}</small></span><span>${day(v.created_at)}</span>
         <span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : v.revealed ? '결과 공개' : '마감'}</span></a>`).join('')}</div>`
-        : '<div class="card empty">아직 표결이 없어요.</div>'}</div>
-      <div>${isOfficer() ? `<form class="card form" id="vf"><h2>새 표결</h2>
-        <div class="seg" id="vk"><button type="button" data-k="yesno" aria-pressed="true">찬반 (의안)</button><button type="button" data-k="choice" aria-pressed="false">여러 선택지</button></div>
+        : '<div class="card empty">아직 투표가 없어요.</div>'}</div>
+      <div>${isOfficer() ? `<form class="card form" id="vf"><h2>새 투표</h2>
+        <div class="seg" id="vk"><button type="button" data-k="yesno" aria-pressed="true">찬반 (안건)</button><button type="button" data-k="choice" aria-pressed="false">여러 선택지</button></div>
         <div id="vfields" class="form"></div>
-        <div class="row"><button class="btn primary">표결 시작</button></div><p class="err" id="vfErr"></p></form>` : ''}</div>
+        <div class="row"><button class="btn primary">투표 시작</button></div><p class="err" id="vfErr"></p></form>` : ''}</div>
     </div>`;
   if (!isOfficer()) return;
   const pending = billsRes.bills.filter(b => ['received', 'review', 'tabled'].includes(b.stage));
   let kind = 'yesno', method = 'plurality';
   const drawFields = () => {
     $('#vfields').innerHTML = kind === 'yesno'
-      ? (pending.length ? field('의안', `<select name="bill_id">${pending.map(b => `<option value="${b.id}">${billNo(b)} ${esc(b.title)}</option>`).join('')}</select>`, '찬성·반대·기권으로 표결하고, 결과를 의안의 의결 결과로 옮길 수 있어요.')
-        : '<p class="sub" style="margin:0">표결할 수 있는 의안(접수·심사·상정 단계)이 없어요.</p>')
-      : field('표결 제목', '<input name="title" maxlength="80" required placeholder="예: 체육대회 종목 정하기">') +
+      ? (pending.length ? field('안건', `<select name="bill_id">${pending.map(b => `<option value="${b.id}">${billNo(b)} ${esc(b.title)}</option>`).join('')}</select>`, '찬성·반대·기권으로 투표하고, 끝나면 결과를 안건에 넣을 수 있어요.')
+        : '<p class="sub" style="margin:0">투표할 수 있는 안건(제안·검토·회의에 올림 단계)이 없어요.</p>')
+      : field('투표 제목', '<input name="title" maxlength="80" required placeholder="예: 체육대회 종목 정하기">') +
         field('선택지', '<textarea name="options" rows="4" required placeholder="한 줄에 하나씩 (2~6개)"></textarea>') +
         `<div class="f">세는 방법<div class="mpick" id="vm">${Object.entries(METHODS).map(([k, M]) => `<button type="button" data-m="${k}" aria-pressed="${k === method}"><b>${M.name}</b><span>${M.how}</span></button>`).join('')}</div>
           <small>방법마다 결과가 어떻게 달라지는지 <a href="/vote/?mode=lab" target="_blank" rel="noopener">투표 방식 실험실</a>에서 미리 볼 수 있어요.</small></div>`;
@@ -931,7 +935,7 @@ async function votesPage() {
 
 async function votePage(id) {
   const V = { phase: '', shown: '', editing: false };
-  app.innerHTML = `<a class="back" href="${C('/v')}">← 표결 목록</a><section class="card" id="vh"></section>
+  app.innerHTML = `<a class="back" href="${C('/v')}">← 투표 목록</a><section class="card" id="vh"></section>
     <section class="card narrow" id="vb" style="margin-top:16px"></section><div id="vr" style="margin-top:16px"></div><p class="err" id="ve"></p>`;
   const refresh = async () => {
     try { renderVote(await req('votes', { id }), V); $('#ve').textContent = '' }
@@ -942,19 +946,19 @@ async function votePage(id) {
 function renderVote(d, V) {
   const v = d.vote, me = CUR.me, cands = v.options;
   if (!$('#vh')) return;
-  const rule = d.pass_rule === 'two_thirds' ? '출석 3분의 2' : '출석 과반';
+  const rule = d.pass_rule === 'two_thirds' ? '참석자 3분의 2 이상이 찬성하면' : '참석자 절반보다 많이 찬성하면';
   $('#vh').innerHTML = `<p class="sub" style="margin:0">${esc(voteKind(v))}${d.bill ? ` · <a href="${C('/b/' + d.bill.id)}">${billNo(d.bill)} ${esc(d.bill.title)}</a>` : ''}</p>
     <h1 class="h1">${esc(v.title)}</h1>
     <div class="row" style="margin-top:10px"><span class="chip${v.open ? ' on' : ''}">${v.open ? '진행 중' : '마감'}</span>
-      <span><b style="font-size:22px">${d.count}</b>명 참여${d.enrolled ? ` · 재적 ${d.enrolled}명` : ''}</span><span class="grow"></span>
-      ${isOfficer() ? `<button class="btn" data-act="open">${v.open ? '표결 마감' : '다시 열기'}</button><button class="btn primary" data-act="reveal">${v.revealed ? '결과 가리기' : '결과 공개'}</button>
-        ${v.kind === 'yesno' && d.bill && !v.applied && !v.open ? '<button class="btn" data-act="apply">의안에 반영</button>' : ''}` : ''}</div>
-    ${v.applied ? '<p class="sub" style="margin:10px 0 0">이 결과는 의안의 의결 결과로 옮겨졌어요.</p>' : ''}`;
+      <span><b style="font-size:22px">${d.count}</b>명 참여${d.enrolled ? ` · 전체 ${d.enrolled}명` : ''}</span><span class="grow"></span>
+      ${isOfficer() ? `<button class="btn" data-act="open">${v.open ? '투표 마감' : '다시 열기'}</button><button class="btn primary" data-act="reveal">${v.revealed ? '결과 가리기' : '결과 공개'}</button>
+        ${v.kind === 'yesno' && d.bill && !v.applied && !v.open ? '<button class="btn" data-act="apply">안건에 결과 넣기</button>' : ''}` : ''}</div>
+    ${v.applied ? '<p class="sub" style="margin:10px 0 0">이 결과를 안건에 넣었어요.</p>' : ''}`;
   $('#vh').onclick = async e => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     try {
       if (b.dataset.act === 'apply') {
-        if (!confirm('표결 결과를 의안의 의결 결과로 옮길까요?')) return;
+        if (!confirm('투표 결과를 안건에 넣을까요?')) return;
         await req('votes', null, { action: 'apply', id: v.id });
       } else await req('votes', null, Object.assign({ action: 'update', id: v.id }, b.dataset.act === 'open' ? { open: !v.open } : { revealed: !v.revealed }));
       V.shown = ''; renderVote(await req('votes', { id: v.id }), V);
@@ -969,8 +973,8 @@ function renderVote(d, V) {
   if (phase !== V.phase) {
     V.phase = phase;
     const vb = $('#vb');
-    if (phase === 'view') vb.innerHTML = '<p class="sub" style="margin:0">표결은 제안 코드나 임원 코드로 들어온 기기에서 참여할 수 있어요. 위의 \'권한 코드\'를 눌러 넣어 주세요.</p>';
-    else if (!v.open) vb.innerHTML = `<p style="margin:0"><b>표결이 마감되었어요.</b> ${v.revealed ? '' : '결과는 임원이 공개하면 보여요.'}</p>${mineHTML}`;
+    if (phase === 'view') vb.innerHTML = '<p class="sub" style="margin:0">투표는 제안 코드나 임원 코드를 넣은 기기에서 할 수 있어요. 위의 \'권한 코드\'를 눌러 넣어 주세요.</p>';
+    else if (!v.open) vb.innerHTML = `<p style="margin:0"><b>투표가 끝났어요.</b> ${v.revealed ? '' : '결과는 임원이 공개하면 보여요.'}</p>${mineHTML}`;
     else if (phase === 'voted') {
       vb.innerHTML = `<p style="margin:0"><b>투표했어요.</b> 마감 전에는 다시 고를 수 있어요.</p>${mineHTML}<button class="btn" id="redo">다시 고르기</button>`;
       $('#redo').onclick = () => { V.editing = true; renderVote(d, V) };
@@ -994,11 +998,11 @@ function renderVote(d, V) {
   if (!v.revealed) { vr.innerHTML = ''; return }
   if (v.kind === 'choice') return bigResult(vr, { cands, groups: d.groups, method: v.method });
   const r = d.result;
-  const quorum = d.enrolled ? ` 재적 ${d.enrolled}명 중 ${r.total}명이 참여했어요${r.total * 2 > d.enrolled ? '.' : '. (재적 과반 미달)'}` : '';
-  vr.innerHTML = `<div class="card result"><p class="rlabel">표결 결과</p>
-    <div class="winner${r.passed ? '' : ' none'}">${r.total ? (r.passed ? '가결' : '부결') : '표 없음'}</div>
+  const quorum = d.enrolled ? ` 전체 ${d.enrolled}명 중 ${r.total}명이 투표했어요${r.total * 2 > d.enrolled ? '.' : '. (전체의 절반이 안 돼요)'}` : '';
+  vr.innerHTML = `<div class="card result"><p class="rlabel">투표 결과</p>
+    <div class="winner${r.passed ? '' : ' none'}">${r.total ? (r.passed ? '통과' : '통과 못 함') : '표 없음'}</div>
     <p class="wsub">찬성 ${r.yes} · 반대 ${r.no} · 기권 ${r.abstain}</p>
-    <p class="rule">${rule} 찬성이면 가결이에요. 참여 ${r.total}명 중 ${r.needed}명 이상 찬성해야 해요.${quorum}</p>
+    <p class="rule">${rule} 통과해요. 이번에는 ${r.total}명 중 ${r.needed}명 이상 찬성해야 했어요.${quorum}</p>
     <div class="body">${bars(['찬성', '반대', '기권'], [r.yes, r.no, r.abstain])}</div></div>`;
 }
 

@@ -28,14 +28,14 @@ function freshCode(space) {
 }
 function settingsFrom(b, old) {
     const kind = old ? old.kind : (KINDS[b.kind] ? b.kind : 'council');
-    const unitNames = names(b.units, 80, 20, '제안 단위');
+    const unitNames = names(b.units, 80, 20, '안건을 내는 곳');
     const s = {
         kind,
         name: text(b.name, 40, '이름', true),
-        body_name: text(b.body_name, 20, '심의 기구 이름') || KINDS[kind],
-        roles: names(b.roles, 15, 12, '직책'),
+        body_name: text(b.body_name, 20, '회의 모임 이름') || KINDS[kind],
+        roles: names(b.roles, 15, 12, '역할'),
         pass_rule: b.pass_rule === 'two_thirds' ? 'two_thirds' : 'majority',
-        enrolled: count(b.enrolled, '재적') || 0,
+        enrolled: count(b.enrolled, '전체 인원') || 0,
         admin_code: old ? old.admin_code : makeCode(6),
         officer_code: old ? old.officer_code : '',
         units: []
@@ -89,7 +89,7 @@ module.exports = handler({
             if (which === 'admin') patch.admin_code = freshCode(s);
             else if (which === 'officer') patch.officer_code = freshCode(s);
             else if (which === 'unit') {
-                if (!s.units.some(u => u.name === ctx.body.unit)) fail(400, '그런 제안 단위가 없어요.');
+                if (!s.units.some(u => u.name === ctx.body.unit)) fail(400, '그런 학급(모둠)이 없어요.');
                 patch.units = s.units.map(u => u.name === ctx.body.unit ? { name: u.name, code: freshCode(s) } : u);
             } else if (which !== 'space') fail(400, '무엇을 새로 만들지 골라 주세요.');
             for (let i = 0; ; i++) {
