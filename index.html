@@ -34,7 +34,28 @@ a{color:var(--accent)}
 @media (max-width:760px){#nav{order:3;flex:1 1 100%}}
 #nav a{padding:6px 10px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px}
 #nav a[aria-current="page"]{color:var(--accent);background:var(--panel-2);box-shadow:inset 0 -2px 0 var(--accent)}
-#who{display:flex;align-items:center;gap:8px;margin-left:auto}
+#who{display:flex;align-items:center;gap:8px}
+.guide-link{margin-left:auto;font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px}
+.guide-link:hover,.guide-link[aria-current="page"]{color:var(--accent);background:var(--panel-2)}
+/* 사용법 */
+.guide{max-width:820px;margin:0 auto}
+.guide .toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 8px}
+.guide .toc a{border:1px solid var(--line-2);border-radius:8px;padding:6px 12px;font-size:14px;font-weight:500;text-decoration:none;color:var(--ink);background:var(--panel)}
+.guide .toc a:hover{border-color:var(--accent);color:var(--accent)}
+.guide section{border-top:1px solid var(--line-2);padding:28px 0 8px;margin-top:28px;scroll-margin-top:16px}
+.guide h2{font-size:22px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.guide h3{font-size:17px;font-weight:600;margin:26px 0 6px}
+.guide p,.guide li{font-size:16px;line-height:1.7;color:var(--ink)}
+.guide p{margin:6px 0}
+.guide ol{margin:8px 0;padding-left:22px}
+.guide .who-tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:4px;border:1px solid var(--accent);color:var(--accent);margin-left:6px;vertical-align:3px}
+.guide figure{margin:14px 0 6px}
+.guide figure img{display:block;max-width:100%;height:auto;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+.guide figure.small img{max-width:min(100%,480px)}
+.guide figcaption{font-size:13px;color:var(--muted);margin-top:6px}
+.guide .tip{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:15px;margin:12px 0}
+.guide .tbl td,.guide .tbl th{font-size:15px}
+.guide .q{font-weight:600;margin-top:18px}
 main{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
 .card h2{margin:0 0 6px;font-size:16px;font-weight:600}
@@ -192,6 +213,7 @@ footer a{color:inherit}
 <header class="top">
   <a class="brand" href="#/">C-Link <span style="font-weight:400;color:var(--muted);font-size:14px">학생자치 의안정보시스템</span></a>
   <nav id="nav" aria-label="메뉴" hidden></nav>
+  <a class="guide-link" href="#/guide">사용법</a>
   <div id="who"></div>
 </header>
 <main id="app"></main>
@@ -323,10 +345,12 @@ $('#keyView').onclick = async () => { await enter(CUR.code); $('#keyDlg').close(
 /* ── 화면 고르기 ── */
 async function route() {
   stopPoll();
+  $('.guide-link').removeAttribute('aria-current');
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   try {
     if (!parts.length) return home();
     if (parts[0] === 'new') return createPage();
+    if (parts[0] === 'guide') return guidePage(parts[1]);
     await ensureSpace(parts[0].toUpperCase());
     const [p, id, sub] = parts.slice(1);
     chrome({ b: 'bills', propose: 'bills', m: 'm', v: 'v', settings: 'settings' }[p] || 'bills');
@@ -362,8 +386,8 @@ function home() {
     ${recent.length ? `<div class="card"><h2>최근 들어간 공간</h2><ul class="plain">${recent.map(([c, n]) =>
       `<li><a href="#/${esc(c)}">${esc(n)}</a> <span class="sub mono">${esc(c)}</span></li>`).join('')}</ul></div>` : ''}
     <div class="card"><h2>처음 쓰시는 선생님</h2>
-      <p class="sub">학교 학생회나 우리 반 학급회의 공간을 만들고, 학생들에게 나눠 줄 코드를 받아요.</p>
-      <a class="btn" href="#/new">새 공간 만들기</a></div>
+      <p class="sub">학교 학생회나 우리 반 학급회의 공간을 만들고, 학생들에게 나눠 줄 코드를 받아요. 처음이라면 사용법을 먼저 훑어보세요.</p>
+      <div class="row"><a class="btn" href="#/new">새 공간 만들기</a><a class="btn" href="#/guide">사용법 보기</a></div></div>
     <div class="card"><h2>투표 방식 실험실</h2>
       <p class="sub">공간 없이 바로 투표방을 열어요. 다수결, 결선투표, 순위 점수, 좋아요 세기, 일대일 대결 중 하나로 세고, 같은 표라도 세는 방법에 따라 1등이 바뀌는 것을 실험해 볼 수 있어요.</p>
       <a class="btn" href="/vote/">투표 방식 실험실 열기</a></div>
@@ -374,6 +398,99 @@ function home() {
     try { await enter(code); location.hash = '#/' + code }
     catch (err) { $('#enterErr').textContent = err.message }
   };
+}
+
+/* ── 사용법 (#/guide, #/guide/섹션이름) ── */
+function guidePage(part) {
+  chrome(null);
+  $('.guide-link').setAttribute('aria-current', 'page');
+  const fig = (file, w, h, cap, small) => `<figure${small ? ' class="small"' : ''}><img src="/guide/${file}" width="${w}" height="${h}" loading="lazy" alt="${esc(cap)}"><figcaption>${esc(cap)}</figcaption></figure>`;
+  app.innerHTML = `<article class="guide">
+    <a class="back" href="#/" id="gBack">← 돌아가기</a>
+    <h1 class="h1">사용법</h1>
+    <p class="lead">C-Link는 학급회의와 학생회에 낸 안건이 제안부터 실천까지 어디쯤 왔는지 기록하고 함께 보는 곳이에요. 가입은 없고, 받은 코드로 들어와요.</p>
+    <nav class="toc" aria-label="사용법 차례">
+      <a href="#/guide/codes">코드와 역할</a><a href="#/guide/teacher">선생님</a><a href="#/guide/unit">학급 대표</a>
+      <a href="#/guide/officer">임원</a><a href="#/guide/steps">일곱 걸음</a><a href="#/guide/faq">자주 묻는 질문</a>
+    </nav>
+
+    <section id="g-codes"><h2>코드와 역할</h2>
+      <p>공간 하나(학교 학생회나 우리 반 학급회의)마다 코드가 여러 개 있어요. 공간 코드로 들어오면 누구나 안건을 볼 수 있고, 오른쪽 위 <b>권한 코드</b>에 받은 코드를 더 넣으면 그 역할의 일을 할 수 있어요.</p>
+      <table class="tbl"><thead><tr><th>코드</th><th>누가</th><th>할 수 있는 일</th></tr></thead><tbody>
+        <tr><td>공간 코드 (8자리)</td><td>모든 학생·선생님</td><td>안건, 회의록, 투표 결과 보기</td></tr>
+        <tr><td>제안 코드 (학급마다)</td><td>학급·모둠 대표</td><td>안건 내기, 투표하기</td></tr>
+        <tr><td>임원 코드</td><td>학생회(학급) 임원</td><td>안건 내기, 다음 단계로 넘기기, 회의록 쓰기, 투표 진행</td></tr>
+        <tr><td>관리 코드</td><td>선생님</td><td>설정, 코드표, 학교 답변 쓰기</td></tr>
+      </tbody></table>
+      ${fig('03-key.jpg', 468, 348, '오른쪽 위 \'권한 코드\'를 누르면 나오는 창. 받은 코드를 넣고 확인을 눌러요.', true)}
+      <div class="tip">학생 이름과 연락처는 어디에도 쓰지 않아요. 안건에는 "4학년 1반 · 대의원"처럼 학급(모둠)과 역할만 남아요.</div>
+    </section>
+
+    <section id="g-teacher"><h2>선생님<span class="who-tag">관리 코드</span></h2>
+      <h3>1. 공간 만들기</h3>
+      <p>처음 화면에서 <b>새 공간 만들기</b>를 눌러요. 학교 학생회인지 우리 반 학급회의인지 고르고, 학년·반 수를 넣고 <b>채우기</b>를 누르면 학급 목록이 저절로 만들어져요.</p>
+      ${fig('01-create.jpg', 672, 1001, '공간 만들기 화면. 통과 기준(참석자 절반보다 많이 / 3분의 2 이상)도 여기서 정해요.', true)}
+      <h3>2. 코드표 인쇄해 나눠 주기</h3>
+      <p>공간을 만들면 바로 코드표가 나와요. <b>인쇄</b>를 눌러 학급 대표와 임원에게 나눠 주세요. 코드표는 <b>설정</b> 탭에서 언제든 다시 볼 수 있어요.</p>
+      ${fig('02-codes.jpg', 1080, 659, '코드표. 코드가 퍼졌다면 그 줄의 \'새로 만들기\'를 눌러요. 예전 코드로 들어온 기기는 새 코드를 넣어야 해요.')}
+      <h3>3. 학교 답변 쓰기</h3>
+      <p>임원이 안건을 <b>학교에 전달</b> 단계로 넘기면, 안건 화면의 <b>다음 단계로</b>에서 <b>학교 답변</b>을 골라 답을 적어요. 답변은 안건에 그대로 남아 학생 모두가 볼 수 있어요. 정말 바뀌었다면 <b>실천 완료</b>로 마무리해요.</p>
+    </section>
+
+    <section id="g-unit"><h2>학급 대표<span class="who-tag">제안 코드</span></h2>
+      <h3>1. 안건 내기</h3>
+      <p>학급회의에서 정한 건의를 <b>안건 목록 → 안건 내기</b>로 올려요. 제목은 바라는 것을 한 줄로, "왜 필요한가요?"에는 지금 불편한 점을, "무엇을 바라나요?"에는 무엇을 어떻게 바꾸면 좋을지 써요.</p>
+      ${fig('05-propose.jpg', 672, 826, '안건 내기 화면. 이름은 쓰지 않아요.', true)}
+      <h3>2. 안건이 어디쯤 왔는지 보기</h3>
+      <p>안건 목록에서 <b>진행 중</b>과 <b>끝난 안건</b>을 나눠 볼 수 있어요. 위쪽 단계 단추를 누르면 그 단계의 안건만 보이고, 검색과 분류·학급 거르기도 돼요.</p>
+      ${fig('04-list.jpg', 1088, 515, '안건 목록. 안건마다 번호, 낸 곳, 낸 날, 지금 단계가 보여요.')}
+      <h3>3. 투표하기</h3>
+      <p>회의에서 투표가 열리면 목록 위에 <b>진행 중인 투표</b>가 나와요. 눌러 들어가 찬성·반대·기권 중 하나를 고르고 <b>투표하기</b>를 눌러요. 한 기기에서 한 표만 낼 수 있고, 마감 전까지는 다시 고를 수 있어요.</p>
+      ${fig('08-ballot.jpg', 1088, 483, '찬반 투표 화면.')}
+    </section>
+
+    <section id="g-officer"><h2>임원<span class="who-tag">임원 코드</span></h2>
+      <h3>1. 다음 단계로 넘기기</h3>
+      <p>안건 화면 오른쪽 <b>다음 단계로</b>에서 단계를 고르고 메모를 남긴 뒤 <b>기록하기</b>를 눌러요. 메모는 진행 기록에 남아요. 같은 안건이 이미 있거나 장난 글이면 <b>돌려보냄</b>을 고르고 까닭을 꼭 적어요.</p>
+      ${fig('06-advance.jpg', 1088, 1086, '임원이 보는 안건 화면. 다음 단계로 넘기기와 찬반 투표 시작이 있어요.')}
+      <h3>2. 회의록 쓰기</h3>
+      <p><b>회의록 → 회의록 쓰기</b>를 열면 그날 회의에 올린 안건, 투표 결과, 투표한 사람 수로 초안이 저절로 채워져요. 나온 의견만 덧붙이고 저장하면 돼요. 처음 올린 안건은 "회의에 올림" 단계로 바뀌어요.</p>
+      ${fig('07-meeting.jpg', 672, 1460, '회의록 쓰기. "기록으로 채우기"로 날짜를 바꿔 다시 채울 수도 있어요.', true)}
+      <h3>3. 투표 진행하기</h3>
+      <ol>
+        <li>안건 화면의 <b>투표 시작</b>(찬반) 또는 <b>투표</b> 탭의 새 투표(여러 선택지)로 투표를 열어요.</li>
+        <li>모두 투표하면 <b>투표 마감</b>을 눌러요.</li>
+        <li><b>결과 공개</b>를 누르면 모두의 화면에 결과가 크게 나와요. 칠판에 띄워도 공개 전에는 결과가 보이지 않아요.</li>
+        <li>찬반 투표는 <b>안건에 결과 넣기</b>를 누르면 안건의 결정(통과·통과 못 함)과 표 수가 기록돼요.</li>
+      </ol>
+      ${fig('09-result.jpg', 1080, 427, '투표 결과. 통과 기준과 참석 인원이 함께 나와요.')}
+      <p>여러 선택지 투표는 다수결, 결선투표, 순위 점수, 좋아요 세기, 일대일 대결 중 하나로 셀 수 있어요. 방법마다 결과가 어떻게 달라지는지는 <a href="/vote/?mode=lab">투표 방식 실험실</a>에서 미리 볼 수 있어요.</p>
+    </section>
+
+    <section id="g-steps"><h2>안건이 지나는 일곱 걸음</h2>
+      <table class="tbl"><tbody>
+        <tr><td>1. 제안</td><td>학급·모둠 대표나 임원이 안건을 내요</td></tr>
+        <tr><td>2. 검토</td><td>담당 부서가 먼저 살펴봐요</td></tr>
+        <tr><td>3. 회의에 올림</td><td>대의원회(학급회의)에서 이야기해요</td></tr>
+        <tr><td>4. 결정</td><td>투표로 통과·고쳐서 통과·통과 못 함을 정해요</td></tr>
+        <tr><td>5. 학교에 전달</td><td>통과한 안건을 학교(선생님)에 전해요</td></tr>
+        <tr><td>6. 학교 답변</td><td>학교의 답을 그대로 남겨요</td></tr>
+        <tr><td>7. 실천 완료</td><td>정말 바뀌었는지 확인하고 마무리해요</td></tr>
+      </tbody></table>
+      ${fig('10-bill.jpg', 1088, 1087, '안건 화면. 지금 단계, 결정, 학교 답변, 진행 기록을 한눈에 볼 수 있어요.')}
+    </section>
+
+    <section id="g-faq"><h2>자주 묻는 질문</h2>
+      <p class="q">코드를 잃어버렸어요.</p><p>선생님이 설정 탭의 코드표에서 다시 확인할 수 있어요. 다른 사람에게 퍼졌다면 '새로 만들기'로 바꿔 주세요.</p>
+      <p class="q">학생 이름이 어딘가에 남나요?</p><p>남지 않아요. 안건에는 학급(모둠)과 역할만, 투표에는 기기마다 정해지는 임의 번호만 남아요.</p>
+      <p class="q">투표를 여러 번 할 수 있나요?</p><p>한 기기에서 한 표만 들어가요. 마감 전에 다시 고르면 앞의 표가 바뀌어요.</p>
+      <p class="q">우리 반 학급회의에서도 쓸 수 있나요?</p><p>네. 공간을 만들 때 "우리 반 학급회의"를 고르면 학급 대신 모둠으로, "학교 답변" 대신 "선생님 답변"으로 바뀌어요.</p>
+      <p class="q">공간을 지우고 싶어요.</p><p>선생님이 설정 탭 맨 아래 "공간 지우기"에서 공간 이름을 똑같이 쓰면 안건, 회의록, 투표가 모두 지워져요. 되돌릴 수 없어요.</p>
+    </section>
+  </article>`;
+  // 공간 안에서 들어왔으면 그 공간으로 돌아가기
+  if (CUR.code) { $('#gBack').href = '#/' + CUR.code; $('#gBack').textContent = '← 돌아가기: ' + (CUR.space ? CUR.space.name : CUR.code) }
+  if (part) { const el = document.getElementById('g-' + part); if (el) setTimeout(() => el.scrollIntoView(), 0) }
 }
 
 /* ── 공간 만들기·설정 ── */
